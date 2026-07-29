@@ -1,0 +1,100 @@
+{% extends 'platform/base_platform.html' %}
+{% block title %}Platform Dashboard — GRPMS{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Platform Admin</div>
+  <h2 class="g6-page-title"><i class="fas fa-th-large"></i> Platform Dashboard</h2>
+</div>
+
+<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:1.5rem;">
+  <div class="g6-card" style="text-align:center;">
+    <div style="font-size:2rem; font-weight:800; color:var(--accent); line-height:1;">{{ total_schools }}</div>
+    <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--slate-500); margin-top:4px;">Active Schools</div>
+  </div>
+  <div class="g6-card" style="text-align:center;">
+    <div style="font-size:2rem; font-weight:800; color:var(--role-admin); line-height:1;">{{ total_students }}</div>
+    <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--slate-500); margin-top:4px;">Students</div>
+  </div>
+  <div class="g6-card" style="text-align:center;">
+    <div style="font-size:2rem; font-weight:800; color:var(--role-teacher); line-height:1;">{{ total_staff }}</div>
+    <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--slate-500); margin-top:4px;">Staff Accounts</div>
+  </div>
+</div>
+
+<div class="g6-card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+    <h3 style="font-size:1rem; font-weight:700; margin:0;">All Schools</h3>
+    <a href="{{ url_for('platform.add_school') }}" class="g6-btn g6-btn-primary" style="font-size:0.82rem; padding:0.5rem 1rem;">
+      <i class="fas fa-plus"></i> Add School
+    </a>
+  </div>
+
+  {% if schools %}
+  <div class="g6-table-responsive">
+    <table class="g6-table">
+      <thead>
+        <tr><th>School</th><th>SuperAdmin</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for school in schools %}
+        {% set super_admin = super_admins.get(school.id) %}
+        <tr>
+          <td data-label="School">
+            <div style="font-weight:700; color:var(--slate-900);">{{ school.name }}</div>
+            {% if school.motto %}<div class="g6-text-sm g6-muted">{{ school.motto }}</div>{% endif %}
+          </td>
+          <td data-label="SuperAdmin">
+            {% if super_admin %}
+              <span class="g6-badge g6-badge-success"><i class="fas fa-user-check"></i> {{ super_admin.username }}</span>
+            {% else %}
+              <a href="{{ url_for('platform.create_superadmin', school_id=school.id) }}" class="g6-badge g6-badge-warning">
+                <i class="fas fa-exclamation-triangle"></i> Create SuperAdmin
+              </a>
+            {% endif %}
+          </td>
+          <td data-label="Status">
+            {% if school.is_active %}
+              <span class="g6-badge g6-badge-success"><i class="fas fa-circle"></i> Active</span>
+            {% else %}
+              <span class="g6-badge g6-badge-danger"><i class="fas fa-circle"></i> Inactive</span>
+            {% endif %}
+          </td>
+          <td data-label="Actions">
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <a href="{{ url_for('platform.edit_school', school_id=school.id) }}"
+                 class="g6-btn g6-btn-outline" style="font-size:0.78rem; padding:0.4rem 0.8rem;">
+                <i class="fas fa-edit"></i> Edit
+              </a>
+              <a href="{{ url_for('platform.export_school_data', school_id=school.id) }}"
+                 class="g6-btn g6-btn-outline"
+                 style="font-size:0.78rem; padding:0.4rem 0.8rem; color:#5db800;">
+                <i class="fas fa-file-excel"></i> Export
+              </a>
+              <a href="{{ url_for('platform.coupon_register', school_id=school.id) }}"
+                 class="g6-btn g6-btn-outline" style="font-size:0.78rem; padding:0.4rem 0.8rem;">
+                <i class="fas fa-ticket-alt"></i> Coupons
+              </a>
+              <form action="{{ url_for('platform.toggle_school_active', school_id=school.id) }}" method="POST" style="margin:0;"
+                    onsubmit="return confirm('{{ 'Deactivate' if school.is_active else 'Reactivate' }} {{ school.name }}?')">
+                <button type="submit" class="g6-btn g6-btn-outline"
+                        style="font-size:0.78rem; padding:0.4rem 0.8rem; color:{{ 'var(--danger)' if school.is_active else 'var(--success)' }};">
+                  <i class="fas fa-{{ 'ban' if school.is_active else 'check-circle' }}"></i>
+                  {{ 'Deactivate' if school.is_active else 'Reactivate' }}
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="g6-empty">
+    <i class="fas fa-school"></i>
+    <p>No schools added yet. <a href="{{ url_for('platform.add_school') }}">Add your first school.</a></p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

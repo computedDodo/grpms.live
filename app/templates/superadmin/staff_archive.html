@@ -1,0 +1,53 @@
+{% extends 'superadmin/base_superadmin.html' %}
+{% block title %}Archived Staff — {{ school.name }}{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Staff Management</div>
+  <h2 class="g6-page-title"><i class="fas fa-archive"></i> Archived Staff</h2>
+  <a href="{{ url_for('superadmin.manage_staff') }}" class="g6-btn g6-btn-outline"
+     style="font-size:0.82rem; padding:0.5rem 1rem; margin-top:0.5rem;">
+    <i class="fas fa-arrow-left"></i> Back to Active Staff
+  </a>
+</div>
+
+<div class="g6-card">
+  {% if archived %}
+  <div class="g6-table-responsive">
+    <table class="g6-table">
+      <thead>
+        <tr><th>Username</th><th>Role</th><th>Full Name</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for member in archived %}
+        <tr>
+          <td data-label="Username"><span style="font-weight:700;">@{{ member.username }}</span></td>
+          <td data-label="Role"><span class="g6-badge g6-badge-neutral">{{ member.role }}</span></td>
+          <td data-label="Full Name">
+            {% if member.teacher_profile %}
+              {{ member.teacher_profile.title }} {{ member.teacher_profile.full_name }}
+            {% else %}<span class="g6-muted">—</span>{% endif %}
+          </td>
+          <td data-label="Actions">
+            <form action="{{ url_for('superadmin.restore_staff', user_id=member.id) }}" method="POST"
+                  style="margin:0;"
+                  onsubmit="return confirm('Restore @{{ member.username }}? They will be able to log in again.')">
+              <button type="submit" class="g6-btn g6-btn-outline"
+                      style="font-size:0.75rem; padding:0.35rem 0.7rem; color:var(--success);">
+                <i class="fas fa-undo"></i> Restore
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="g6-empty">
+    <i class="fas fa-box-open"></i>
+    <p>No archived staff members found.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

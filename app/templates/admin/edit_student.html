@@ -1,0 +1,59 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Edit Student — Admin{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Students</div>
+  <h2 class="g6-page-title"><i class="fas fa-edit"></i> Edit Student Record</h2>
+</div>
+<div class="g6-card" style="max-width:540px;">
+  <div class="g6-flash g6-flash-info" style="margin-bottom:1rem;">
+    <i class="fas fa-id-card"></i>
+    <span>Admission No: <strong>{{ student.admission_number }}</strong></span>
+  </div>
+
+  <!-- Transcript Coupon display (read-only — assigned by Platform Admin) -->
+  <div style="margin-bottom:1rem; padding:0.85rem 1rem; border-radius:var(--radius-sm);
+              background:var(--slate-50); border:1px solid var(--slate-200);">
+    <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase;
+                letter-spacing:0.06em; color:var(--slate-500); margin-bottom:0.4rem;">
+      <i class="fas fa-file-contract"></i> Transcript Coupon
+    </div>
+    {% if student.transcript_coupon %}
+    <code style="font-size:1rem; font-weight:800; letter-spacing:0.1em;
+                 color:var(--slate-900);">{{ student.transcript_coupon }}</code>
+    <div class="g6-text-sm g6-muted" style="margin-top:4px;">
+      Share this with the student or parent. Required to download the transcript.
+    </div>
+    {% else %}
+    <span class="g6-badge g6-badge-warning">
+      <i class="fas fa-clock"></i> Not yet assigned — contact Platform Admin
+    </span>
+    {% endif %}
+  </div>
+  <form method="POST" action="{{ url_for('admin.edit_student', student_id=student.id) }}">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+      <div>
+        <label class="g6-label">First Name <span style="color:var(--danger)">*</span></label>
+        <input type="text" name="first_name" class="g6-input" value="{{ student.first_name }}" required>
+      </div>
+      <div>
+        <label class="g6-label">Last Name <span style="color:var(--danger)">*</span></label>
+        <input type="text" name="last_name" class="g6-input" value="{{ student.last_name }}" required>
+      </div>
+    </div>
+    <div style="margin-bottom:1.5rem;">
+      <label class="g6-label">Class</label>
+      <select name="class_id" class="g6-select">
+        {% for cls in classes %}
+        <option value="{{ cls.id }}" {{ 'selected' if student.current_class_id == cls.id }}>{{ cls.class_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="display:flex;gap:0.75rem;">
+      <button type="submit" class="g6-btn g6-btn-primary" style="flex:1;"><i class="fas fa-save"></i> Save Changes</button>
+      <a href="{{ url_for('admin.manage_students') }}" class="g6-btn g6-btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Classes — Admin{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Academic Structure</div>
+  <h2 class="g6-page-title"><i class="fas fa-door-open"></i> Class Management</h2>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr;gap:1.25rem;">
+
+  <div class="g6-card">
+    <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:0.85rem;"><i class="fas fa-plus-circle" style="color:var(--accent);"></i> Add New Class</h3>
+    <form method="POST" action="{{ url_for('admin.manage_classes') }}" style="display:grid;grid-template-columns:1fr 1fr auto;gap:0.75rem;align-items:flex-end;">
+      <div>
+        <label class="g6-label">Class Name <span style="color:var(--danger)">*</span></label>
+        <input type="text" name="class_name" class="g6-input" placeholder="e.g. JSS 1, Primary 3" required>
+      </div>
+      <div>
+        <label class="g6-label">Section</label>
+        <select name="section" class="g6-select">
+          <option value="">General</option>
+          <option value="Nursery">Nursery</option>
+          <option value="Primary">Primary</option>
+          <option value="Secondary">Secondary</option>
+        </select>
+      </div>
+      <button type="submit" class="g6-btn g6-btn-primary"><i class="fas fa-plus"></i> Add</button>
+    </form>
+  </div>
+
+  <div class="g6-card">
+    <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:0.85rem;">Active Classes</h3>
+    {% if classes %}
+    <div class="g6-table-responsive">
+      <table class="g6-table">
+        <thead><tr><th>#</th><th>Class Name</th><th>Section</th><th>Form Master</th><th>Actions</th></tr></thead>
+        <tbody>
+          {% for cls in classes %}
+          <tr>
+            <td data-label="#">{{ loop.index }}</td>
+            <td data-label="Class Name"><span style="font-weight:700;">{{ cls.class_name }}</span></td>
+            <td data-label="Section">
+              <span class="g6-badge g6-badge-{{ 'info' if cls.section=='Secondary' else 'success' if cls.section=='Primary' else 'neutral' }}">
+                {{ cls.section or 'General' }}
+              </span>
+            </td>
+            <td data-label="Form Master">
+              {% if cls.form_master %}
+                {{ cls.form_master.full_name }}
+              {% else %}
+                <span class="g6-muted fst-italic">Unassigned</span>
+              {% endif %}
+            </td>
+            <td data-label="Actions">
+              <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                <a href="{{ url_for('admin.edit_class', class_id=cls.id) }}"
+                   class="g6-btn g6-btn-outline" style="font-size:0.75rem;padding:0.35rem 0.7rem;">
+                  <i class="fas fa-edit"></i> Edit
+                </a>
+                <a href="{{ url_for('admin.broad_sheet', class_id=cls.id) }}"
+                   class="g6-btn g6-btn-outline" style="font-size:0.75rem;padding:0.35rem 0.7rem;">
+                  <i class="fas fa-table"></i> Broad Sheet
+                </a>
+                <form action="{{ url_for('admin.delete_class', class_id=cls.id) }}" method="POST" style="margin:0;"
+                      onsubmit="return confirm('Delete {{ cls.class_name }}? This cannot be undone.')">
+                  <button type="submit" class="g6-btn g6-btn-outline"
+                          style="font-size:0.75rem;padding:0.35rem 0.7rem;color:var(--danger);">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="g6-empty"><i class="fas fa-door-open"></i><p>No classes yet. Add one above.</p></div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

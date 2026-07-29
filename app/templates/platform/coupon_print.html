@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unused Coupons — {{ school.name }}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fff; color: #0f172a; }
+  .print-header { text-align: center; padding: 1.5rem; border-bottom: 2px solid #0f172a; margin-bottom: 1.5rem; }
+  .school-name { font-size: 1.5rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+  .print-meta { font-size: 0.85rem; color: #475569; margin-top: 4px; }
+  .print-notice { font-size: 0.8rem; color: #dc2626; font-weight: 600; margin-top: 8px; }
+  .code-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 0 1rem 1rem; }
+  .code-item { border: 1.5px dashed #94a3b8; border-radius: 6px; padding: 8px 10px; text-align: center; }
+  .code-item .code { font-family: monospace; font-size: 1rem; font-weight: 700; letter-spacing: 0.1em; color: #0f172a; }
+  .code-item .term-label { font-size: 0.65rem; color: #64748b; margin-top: 2px; }
+  .print-footer { text-align: center; padding: 1rem; border-top: 1px solid #e2e8f0; font-size: 0.75rem; color: #94a3b8; }
+  @media print {
+    @page { size: A4 portrait; margin: 10mm; }
+    .no-print { display: none !important; }
+    body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<div class="no-print" style="padding:1rem; display:flex; gap:0.75rem; justify-content:center;">
+  <button onclick="window.print()" style="padding:0.6rem 1.5rem; background:#0f172a; color:#fff; border:none; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.9rem;">
+    <i class="fas fa-print"></i> Print
+  </button>
+  <a href="javascript:history.back()" style="padding:0.6rem 1.5rem; border:1.5px solid #e2e8f0; border-radius:8px; font-weight:600; color:#334155; text-decoration:none; font-size:0.9rem;">
+    Back
+  </a>
+</div>
+
+<div class="print-header">
+  <div class="school-name">{{ school.name }}</div>
+  <div class="print-meta">
+    COUPON CODES — {{ term.term_name }}, {{ term.session.session_name }}
+  </div>
+  <div class="print-meta">Generated: {{ coupons|length }} unused code(s)</div>
+  <div class="print-notice">
+    ⚠ Each code can only be used ONCE. Guard your code carefully.
+  </div>
+</div>
+
+<div class="code-grid">
+  {% for coupon in coupons %}
+  <div class="code-item">
+    <div class="code">{{ coupon.code }}</div>
+    <div class="term-label">{{ term.term_name[:3] }} {{ term.session.session_name[-4:] }}</div>
+  </div>
+  {% else %}
+  <div style="grid-column:1/-1; text-align:center; padding:2rem; color:#94a3b8;">
+    No unused coupon codes available for this term.
+  </div>
+  {% endfor %}
+</div>
+
+<div class="print-footer">
+  Printed from GRPMS — {{ school.name }} — {{ term.term_name }}, {{ term.session.session_name }}
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</body>
+</html>

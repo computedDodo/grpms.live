@@ -1,0 +1,109 @@
+{% extends 'platform/base_platform.html' %}
+{% block title %}Generate Coupons — GRPMS{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Coupons</div>
+  <h2 class="g6-page-title"><i class="fas fa-ticket-alt"></i> Generate Coupon Codes</h2>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr; gap:1.25rem;">
+
+  <!-- Step 1: Pick school -->
+  <div class="g6-card">
+    <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:0.75rem;">Step 1 — Select School &amp; Term</h3>
+    <form method="GET" action="{{ url_for('platform.generate_coupons') }}" style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:flex-end;">
+      <div style="flex:1; min-width:200px;">
+        <label class="g6-label" for="school_id_pick">School</label>
+        <select id="school_id_pick" name="school_id" class="g6-select" required onchange="this.form.submit()">
+          <option value="" disabled {{ 'selected' if not selected_school }}>Select a school...</option>
+          {% for s in schools %}
+          <option value="{{ s.id }}" {{ 'selected' if selected_school and selected_school.id == s.id }}>{{ s.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+
+    {% if selected_school %}
+      {% if active_term %}
+      <div class="g6-flash g6-flash-success" style="margin-top:1rem;">
+        <i class="fas fa-check-circle"></i>
+        <span>Active term: <strong>{{ active_term.term_name }}</strong>,
+        <strong>{{ active_term.session.session_name }}</strong>.
+        Coupons will be generated for this term.</span>
+      </div>
+      {% else %}
+      <div class="g6-flash g6-flash-warning" style="margin-top:1rem;">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span><strong>{{ selected_school.name }}</strong> has no active session/term set up yet.
+        Ask the school SuperAdmin to configure Academic Setup first, then come back here.</span>
+      </div>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  <!-- Step 2: Configure and generate -->
+  {% if selected_school and active_term %}
+  <div class="g6-card">
+    <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:0.75rem;">Step 2 — Configure Batch</h3>
+    <form method="POST" action="{{ url_for('platform.generate_coupons') }}">
+      <input type="hidden" name="school_id" value="{{ selected_school.id }}">
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+        <div>
+          <label class="g6-label" for="quantity">Number of Codes <span style="color:var(--danger)">*</span></label>
+          <input type="number" id="quantity" name="quantity" class="g6-input"
+                 placeholder="e.g. 150" min="1" max="5000" required>
+          <span class="g6-text-sm g6-muted">Max 5,000 per batch</span>
+        </div>
+        <div>
+          <label class="g6-label" for="length">Code Length</label>
+          <input type="number" id="length" name="length" class="g6-input"
+                 value="8" min="6" max="16">
+          <span class="g6-text-sm g6-muted">6 – 16 characters</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom:1.5rem;">
+        <label class="g6-label">Character Set</label>
+        <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+          <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; font-size:0.9rem;">
+            <input type="radio" name="charset" value="alphanumeric" checked> Letters + Numbers
+            <span class="g6-text-sm g6-muted">(e.g. A3KP8M7)</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; font-size:0.9rem;">
+            <input type="radio" name="charset" value="numeric"> Numbers Only
+            <span class="g6-text-sm g6-muted">(e.g. 38274965)</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; font-size:0.9rem;">
+            <input type="radio" name="charset" value="letters"> Letters Only
+            <span class="g6-text-sm g6-muted">(e.g. ABKMPQRZ)</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="g6-flash g6-flash-info" style="margin-bottom:1rem;">
+        <i class="fas fa-info-circle"></i>
+        <span>Codes are automatically unique across the entire system. Ambiguous characters
+        (0, O, 1, I) are excluded to prevent confusion when printed.</span>
+      </div>
+
+      <button type="submit" class="g6-btn g6-btn-primary g6-btn-block">
+        <i class="fas fa-magic"></i> Generate Coupon Codes
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
+  <!-- Quick link to register -->
+  {% if selected_school %}
+  <div style="text-align:center;">
+    <a href="{{ url_for('platform.coupon_register', school_id=selected_school.id) }}"
+       class="g6-btn g6-btn-outline">
+      <i class="fas fa-list"></i> View Coupon Register for {{ selected_school.name }}
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

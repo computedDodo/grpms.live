@@ -1,0 +1,180 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Subject Allocations{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Teaching Assignments</div>
+  <h2 class="g6-page-title"><i class="fas fa-network-wired"></i> Subject Allocations</h2>
+</div>
+
+<!-- Allocation form -->
+<div class="g6-card" style="margin-bottom:1.25rem;">
+  <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:0.85rem;">
+    <i class="fas fa-link" style="color:var(--accent);"></i> Assign Teacher
+  </h3>
+
+  <!-- Mode toggle -->
+  <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+    <button type="button" onclick="setMode('single')" id="btn-single"
+            class="g6-btn g6-btn-primary" style="flex:1; font-size:0.82rem; padding:0.55rem;">
+      <i class="fas fa-dot-circle"></i> Single Class
+    </button>
+    <button type="button" onclick="setMode('batch')" id="btn-batch"
+            class="g6-btn g6-btn-outline" style="flex:1; font-size:0.82rem; padding:0.55rem;">
+      <i class="fas fa-layer-group"></i> Batch by Level
+    </button>
+  </div>
+
+  <form method="POST" action="{{ url_for('admin.manage_allocations') }}" id="allocForm">
+    <input type="hidden" name="action" id="actionInput" value="single">
+
+    <div style="margin-bottom:0.85rem;">
+      <label class="g6-label">Teacher <span style="color:var(--danger)">*</span></label>
+      <select name="teacher_id" class="g6-select" required>
+        <option value="" disabled selected>Select teacher...</option>
+        {% for t in teachers %}
+        <option value="{{ t.id }}">{{ t.title }} {{ t.full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="margin-bottom:0.85rem;">
+      <label class="g6-label">Subject <span style="color:var(--danger)">*</span></label>
+      <select name="subject_id" class="g6-select" required>
+        <option value="" disabled selected>Select subject...</option>
+        {% set ns = namespace(cur='') %}
+        {% for s in subjects %}
+          {% if s.section != ns.cur %}
+            {% set ns.cur = s.section %}
+            <optgroup label="{{ s.section }}">
+          {% endif %}
+          <option value="{{ s.id }}">{{ s.subject_name }} ({{ s.subject_code }})</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Single mode: pick one class -->
+    <div id="single-field" style="margin-bottom:1rem;">
+      <label class="g6-label">Class <span style="color:var(--danger)">*</span></label>
+      <select name="class_id" class="g6-select" id="classSelect">
+        <option value="" disabled selected>Select class...</option>
+        {% for c in classes %}
+        <option value="{{ c.id }}">{{ c.class_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Batch mode: type level keyword -->
+    <div id="batch-field" style="margin-bottom:1rem; display:none;">
+      <label class="g6-label">
+        Class Level Keyword <span style="color:var(--danger)">*</span>
+        <span style="font-weight:400; color:var(--slate-500); font-size:0.78rem;">
+          — matches all classes whose name contains this text
+        </span>
+      </label>
+      <input type="text" name="level_keyword" class="g6-input" id="levelInput"
+             placeholder="e.g. JSS 1  →  finds JSS 1A, JSS 1B, JSS 1C">
+      <div class="g6-text-sm g6-muted" style="margin-top:4px;">
+        Tip: type "JSS" to match all junior classes. Type "SSS 2" for just SS2 arms.
+      </div>
+    </div>
+
+    <button type="submit" class="g6-btn g6-btn-primary g6-btn-block">
+      <i class="fas fa-save"></i> Save Allocation
+    </button>
+  </form>
+</div>
+
+<!-- Current allocations list -->
+<div class="g6-card">
+  <div style="display:flex; justify-content:space-between; align-items:center;
+              margin-bottom:0.85rem; flex-wrap:wrap; gap:0.5rem;">
+    <h3 style="font-size:0.9rem; font-weight:700; margin:0;">
+      <i class="fas fa-list" style="color:var(--accent);"></i> Current Allocations
+    </h3>
+    <span class="g6-badge g6-badge-neutral">
+      {{ grouped_allocations|length }} teacher(s) assigned
+    </span>
+  </div>
+
+  {% if grouped_allocations %}
+  <div style="display:flex; flex-direction:column; gap:1rem;">
+    {% for teacher, allocs in grouped_allocations.items() %}
+    <div style="border:1px solid var(--slate-200); border-radius:var(--radius-sm);
+                overflow:hidden;">
+      <!-- Teacher header -->
+      <div style="background:var(--slate-50); padding:0.75rem 1rem;
+                  display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+        <div style="width:36px; height:36px; border-radius:50%;
+                    background:color-mix(in srgb,var(--accent) 12%,white);
+                    color:var(--accent); display:flex; align-items:center;
+                    justify-content:center; font-size:0.9rem; flex-shrink:0;">
+          <i class="fas fa-chalkboard-teacher"></i>
+        </div>
+        <div style="flex:1;">
+          <div style="font-weight:700; font-size:0.92rem; color:var(--slate-900);">
+            {{ teacher.title }} {{ teacher.full_name }}
+          </div>
+          <div class="g6-text-sm g6-muted">
+            {{ allocs|length }} subject assignment{{ 's' if allocs|length != 1 }}
+          </div>
+        </div>
+      </div>
+      <!-- Allocation rows -->
+      <div style="padding:0.5rem 0;">
+        {% for a in allocs %}
+        <div style="display:flex; align-items:center; justify-content:space-between;
+                    padding:0.55rem 1rem; border-bottom:1px solid var(--slate-100);">
+          <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+            <code style="font-size:0.8rem; font-weight:700; background:var(--slate-100);
+                         padding:2px 7px; border-radius:4px;">
+              {{ a.subject.subject_code }}
+            </code>
+            <span style="font-size:0.88rem; font-weight:600;">
+              {{ a.subject.subject_name }}
+            </span>
+            <span class="g6-badge g6-badge-info" style="font-size:0.7rem;">
+              {{ a.assigned_class.class_name }}
+            </span>
+          </div>
+          <form action="{{ url_for('admin.delete_allocation', alloc_id=a.id) }}"
+                method="POST" style="margin:0;"
+                onsubmit="return confirm('Remove {{ a.subject.subject_code }} from {{ a.assigned_class.class_name }}?')">
+            <button type="submit" class="g6-btn g6-btn-outline"
+                    style="font-size:0.72rem; padding:0.28rem 0.6rem; color:var(--danger);">
+              <i class="fas fa-times"></i>
+            </button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="g6-empty">
+    <i class="fas fa-network-wired"></i>
+    <p>No allocations yet. Assign a teacher above to get started.</p>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function setMode(mode) {
+  const isBatch = mode === 'batch';
+  document.getElementById('actionInput').value    = mode;
+  document.getElementById('single-field').style.display = isBatch ? 'none'  : 'block';
+  document.getElementById('batch-field').style.display  = isBatch ? 'block' : 'none';
+  document.getElementById('classSelect').required  = !isBatch;
+  document.getElementById('levelInput').required   = isBatch;
+  document.getElementById('btn-single').className =
+    isBatch ? 'g6-btn g6-btn-outline' : 'g6-btn g6-btn-primary';
+  document.getElementById('btn-batch').className  =
+    isBatch ? 'g6-btn g6-btn-primary' : 'g6-btn g6-btn-outline';
+  // Update button style sizes
+  ['btn-single','btn-batch'].forEach(id => {
+    document.getElementById(id).style.cssText += 'flex:1;font-size:0.82rem;padding:0.55rem;';
+  });
+}
+</script>
+{% endblock %}

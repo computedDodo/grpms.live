@@ -1,0 +1,74 @@
+{% extends 'student/base_student.html' %}
+{% block title %}Send Feedback — Student Portal{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Feedback &amp; Complaints</div>
+  <h2 class="g6-page-title"><i class="fas fa-comment-dots"></i> Send a Message</h2>
+</div>
+
+<div class="g6-card" style="max-width:580px;">
+  <p class="g6-text-sm g6-muted" style="margin-bottom:1.25rem; line-height:1.6;">
+    You can send a message or complaint to your school admin, form master, or any of your
+    subject teachers. Be clear and respectful.
+  </p>
+
+  <form method="POST" action="{{ url_for('student.feedback') }}">
+
+    <div style="margin-bottom:1rem;">
+      <label class="g6-label">Send To <span style="color:var(--danger)">*</span></label>
+      <select name="recipient_id" class="g6-select" required>
+        <option value="" disabled selected>Choose recipient...</option>
+
+        {% if admins %}
+        <optgroup label="School Administration">
+          {% for admin in admins %}
+          <option value="{{ admin.id }}">Admin — @{{ admin.username }}</option>
+          {% endfor %}
+        </optgroup>
+        {% endif %}
+
+        {% if form_master %}
+        <optgroup label="Form Master">
+          <option value="{{ form_master.user_id }}">
+            {{ form_master.title }} {{ form_master.full_name }} (Form Master)
+          </option>
+        </optgroup>
+        {% endif %}
+
+        {% if teachers %}
+        <optgroup label="Subject Teachers">
+          {% for teacher in teachers %}
+          <option value="{{ teacher.user_id }}">
+            {{ teacher.title }} {{ teacher.full_name }}
+          </option>
+          {% endfor %}
+        </optgroup>
+        {% endif %}
+      </select>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <label class="g6-label">Subject <span style="color:var(--danger)">*</span></label>
+      <input type="text" name="subject" class="g6-input"
+             placeholder="e.g. Question about my Maths score" required>
+    </div>
+
+    <div style="margin-bottom:1.25rem;">
+      <label class="g6-label">Your Message <span style="color:var(--danger)">*</span></label>
+      <textarea name="body" class="g6-input g6-textarea" rows="6"
+                placeholder="Describe your question, concern or complaint clearly..."
+                required></textarea>
+    </div>
+
+    <div style="display:flex; gap:0.75rem;">
+      <button type="submit" class="g6-btn g6-btn-primary" style="flex:1;">
+        <i class="fas fa-paper-plane"></i> Send Message
+      </button>
+      <a href="{{ url_for('student.notifications') }}" class="g6-btn g6-btn-outline">
+        Cancel
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}

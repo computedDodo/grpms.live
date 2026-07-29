@@ -1,0 +1,169 @@
+{% extends 'platform/base_platform.html' %}
+{% block title %}Transcript Coupons — GRPMS{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Transcript Access</div>
+  <h2 class="g6-page-title"><i class="fas fa-file-contract"></i> Transcript Coupons</h2>
+</div>
+
+<div class="g6-flash g6-flash-info" style="margin-bottom:1.25rem;">
+  <i class="fas fa-info-circle"></i>
+  <span>Transcript coupons are <strong>permanent</strong> — assigned once per student, never change,
+  never expire. They gate transcript downloads for both Admin and Students.</span>
+</div>
+
+<!-- School + class filter -->
+<div class="g6-card" style="margin-bottom:1rem;">
+  <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:0.75rem;">Filter</h3>
+  <form method="GET" action="{{ url_for('platform.transcript_coupons') }}"
+        style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:flex-end;">
+    <div style="flex:2; min-width:180px;">
+      <label class="g6-label">School</label>
+      <select name="school_id" class="g6-select" onchange="this.form.submit()">
+        <option value="" disabled {{ 'selected' if not selected_school }}>Select school...</option>
+        {% for s in schools %}
+        <option value="{{ s.id }}" {{ 'selected' if selected_school and selected_school.id == s.id }}>
+          {{ s.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    {% if selected_school %}
+    <div style="flex:2; min-width:160px;">
+      <label class="g6-label">Class (optional)</label>
+      <select name="class_id" class="g6-select" onchange="this.form.submit()">
+        <option value="">All Classes</option>
+        {% for c in classes_for_school %}
+        <option value="{{ c.id }}" {{ 'selected' if selected_class_id == c.id }}>
+          {{ c.class_name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+  </form>
+</div>
+
+{% if selected_school %}
+<!-- Summary + bulk assign -->
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+  <div class="g6-card" style="text-align:center; padding:1rem;">
+    <div style="font-size:1.75rem; font-weight:800; color:var(--success);">{{ assigned_count }}</div>
+    <div style="font-size:0.72rem; text-transform:uppercase; color:var(--slate-500); font-weight:700; margin-top:4px;">
+      Already Assigned
+    </div>
+  </div>
+  <div class="g6-card" style="text-align:center; padding:1rem;">
+    <div style="font-size:1.75rem; font-weight:800; color:var(--danger);">{{ unassigned_count }}</div>
+    <div style="font-size:0.72rem; text-transform:uppercase; color:var(--slate-500); font-weight:700; margin-top:4px;">
+      Not Yet Assigned
+    </div>
+  </div>
+</div>
+
+{% if unassigned_count > 0 %}
+<div class="g6-card" style="margin-bottom:1rem; border:1.5px solid var(--accent);">
+  <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:0.75rem;">
+    <i class="fas fa-magic" style="color:var(--accent);"></i> Bulk Assign to Unassigned Students
+  </h3>
+  <p class="g6-text-sm g6-muted" style="margin-bottom:1rem;">
+    This will assign codes to all <strong>{{ unassigned_count }}</strong> student(s) without one
+    {% if selected_class_id %}in the selected class{% else %}in {{ selected_school.name }}{% endif %}.
+    Students who already have a code will not be touched.
+  </p>
+  <form method="POST" action="{{ url_for('platform.transcript_coupons') }}"
+        onsubmit="return confirm('Bulk assign transcript coupons to {{ unassigned_count }} student(s)?')">
+    <input type="hidden" name="action"     value="bulk_assign">
+    <input type="hidden" name="school_id"  value="{{ selected_school.id }}">
+    <input type="hidden" name="class_id"   value="{{ selected_class_id or '' }}">
+    <div style="display:flex; gap:0.75rem; align-items:flex-end; flex-wrap:wrap;">
+      <div style="flex:1; min-width:130px;">
+        <label class="g6-label">Code Length</label>
+        <input type="number" name="length" class="g6-input" value="8" min="6" max="16">
+      </div>
+      <button type="submit" class="g6-btn g6-btn-primary" style="flex:2;">
+        <i class="fas fa-magic"></i> Bulk Assign Transcript Coupons
+      </button>
+    </div>
+  </form>
+</div>
+{% else %}
+<div class="g6-flash g6-flash-success" style="margin-bottom:1rem;">
+  <i class="fas fa-check-circle"></i>
+  <span>All students in this scope already have transcript coupons assigned.</span>
+</div>
+{% endif %}
+
+<!-- Student list -->
+{% if students %}
+<div class="g6-card">
+  <div style="font-size:0.85rem; font-weight:700; margin-bottom:0.75rem;">
+    Students ({{ students|length }})
+  </div>
+  <div class="g6-table-responsive">
+    <table class="g6-table">
+      <thead>
+        <tr>
+          <th>Adm No.</th>
+          <th>Student Name</th>
+          <th>Class</th>
+          <th>Transcript Coupon</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for student in students %}
+        <tr>
+          <td data-label="Adm No.">
+            <span style="font-weight:700;">{{ student.admission_number }}</span>
+          </td>
+          <td data-label="Name">
+            <span style="font-weight:600;">
+              {{ student.last_name }}, {{ student.first_name }}
+            </span>
+          </td>
+          <td data-label="Class">
+            {{ student.student_class.class_name if student.student_class else '—' }}
+          </td>
+          <td data-label="Transcript Coupon">
+            {% if student.transcript_coupon %}
+            <code style="font-size:0.92rem; font-weight:700; letter-spacing:0.08em;
+                         background:var(--slate-100); padding:2px 8px; border-radius:4px;">
+              {{ student.transcript_coupon }}
+            </code>
+            {% else %}
+            <span class="g6-badge g6-badge-warning">
+              <i class="fas fa-clock"></i> Not assigned
+            </span>
+            {% endif %}
+          </td>
+          <td data-label="Action">
+            {% if not student.transcript_coupon %}
+            <form method="POST" action="{{ url_for('platform.transcript_coupons') }}"
+                  style="margin:0;">
+              <input type="hidden" name="action"     value="assign_single">
+              <input type="hidden" name="student_id" value="{{ student.id }}">
+              <input type="hidden" name="school_id"  value="{{ selected_school.id }}">
+              <input type="hidden" name="class_id"   value="{{ selected_class_id or '' }}">
+              <input type="hidden" name="length"     value="8">
+              <button type="submit" class="g6-btn g6-btn-outline"
+                      style="font-size:0.78rem; padding:0.4rem 0.8rem; color:var(--accent);">
+                <i class="fas fa-plus"></i> Assign
+              </button>
+            </form>
+            {% else %}
+            <span class="g6-badge g6-badge-success">
+              <i class="fas fa-check"></i> Assigned
+            </span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

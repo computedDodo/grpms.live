@@ -1,0 +1,28 @@
+# Environment / secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+*.egg-info/
+
+# Databases
+*.sqlite
+*.sqlite3
+*.db
+
+# Flask-Migrate working files (keep migrations/versions, ignore local cache)
+instance/
+
+# Uploaded school assets (logos, signatures, stamps) — not source code
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+*.swp

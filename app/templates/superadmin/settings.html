@@ -1,0 +1,90 @@
+{% extends 'superadmin/base_superadmin.html' %}
+{% block title %}School Settings — {{ school.name }}{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Configuration</div>
+  <h2 class="g6-page-title"><i class="fas fa-cogs"></i> School Settings</h2>
+</div>
+
+<div class="g6-card" style="max-width:640px;">
+  <form method="POST" enctype="multipart/form-data"
+        action="{{ url_for('superadmin.school_settings') }}">
+
+    <h3 style="font-size:0.88rem; font-weight:700; text-transform:uppercase;
+               letter-spacing:0.06em; color:var(--slate-500); margin-bottom:1rem;">
+      Identity
+    </h3>
+
+    <div style="margin-bottom:1rem;">
+      <label class="g6-label">School Name <span style="color:var(--danger)">*</span></label>
+      <input type="text" name="name" class="g6-input" value="{{ school.name }}" required>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <label class="g6-label">School Motto</label>
+      <input type="text" name="motto" class="g6-input" value="{{ school.motto or '' }}">
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <label class="g6-label">Principal's Name</label>
+      <input type="text" name="principal_name" class="g6-input"
+             value="{{ school.principal_name or '' }}">
+    </div>
+
+    <div style="margin-bottom:1.5rem;">
+      <label class="g6-label">
+        School Code
+        <span style="font-weight:400; color:var(--slate-500);">
+          (used as admission number prefix, e.g. RQA)
+        </span>
+      </label>
+      <input type="text" name="code" class="g6-input"
+             value="{{ school.code or '' }}"
+             placeholder="e.g. RQA, GLA, BHS"
+             maxlength="6"
+             style="text-transform:uppercase; letter-spacing:0.1em; font-weight:700; font-family:monospace;">
+      <div class="g6-text-sm g6-muted" style="margin-top:4px;">
+        Letters only, max 6 characters. Admission numbers will be:
+        <code style="background:var(--slate-100); padding:1px 6px; border-radius:4px;">
+          {{ school.code or 'CODE' }}/25/26/001
+        </code>
+      </div>
+    </div>
+
+    <hr style="border:none; border-top:1px solid var(--slate-200); margin-bottom:1.25rem;">
+
+    <h3 style="font-size:0.88rem; font-weight:700; text-transform:uppercase;
+               letter-spacing:0.06em; color:var(--slate-500); margin-bottom:1rem;">
+      Digital Assets
+      <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:0.78rem;">
+        — Use transparent PNGs for best results
+      </span>
+    </h3>
+
+    {% for field, label, current_path in [
+        ('logo',      'School Logo',            school.logo_path),
+        ('signature', "Principal's Signature",  school.signature_path),
+        ('stamp',     'Official Stamp',         school.stamp_path),
+    ] %}
+    <div style="margin-bottom:1.25rem;">
+      <label class="g6-label">{{ label }}</label>
+      <input type="file" name="{{ field }}" class="g6-input"
+             accept="image/png,image/jpeg" style="padding:0.5rem;">
+      {% if current_path %}
+      <div style="margin-top:6px; display:flex; align-items:center; gap:0.5rem;">
+        <img src="{{ url_for('static', filename=current_path) }}"
+             style="height:48px; object-fit:contain; border:1px solid var(--slate-200);
+                    border-radius:6px; padding:3px; background:#fff;">
+        <span class="g6-text-sm g6-muted">Current {{ label.lower() }}</span>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    <button type="submit" class="g6-btn g6-btn-primary g6-btn-block">
+      <i class="fas fa-save"></i> Save Settings
+    </button>
+  </form>
+</div>
+{% endblock %}

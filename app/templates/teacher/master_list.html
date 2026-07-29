@@ -1,0 +1,106 @@
+{% extends 'teacher/base_teacher.html' %}
+{% block title %}Master List — {{ form_class.class_name }}{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:flex-start;
+            flex-wrap:wrap; gap:0.75rem; margin-bottom:1.25rem;">
+  <div>
+    <div class="g6-eyebrow">Form Master</div>
+    <h2 class="g6-page-title">
+      <i class="fas fa-list-ol"></i> Class Master List
+    </h2>
+    <div style="display:flex; gap:0.5rem; margin-top:0.4rem; flex-wrap:wrap;">
+      <span class="g6-badge g6-badge-success">{{ form_class.class_name }}</span>
+      {% if active_session and active_term %}
+      <span class="g6-badge g6-badge-info">
+        {{ active_term.term_name }} — {{ active_session.session_name }}
+      </span>
+      {% endif %}
+    </div>
+  </div>
+  <div style="display:flex; gap:0.5rem;">
+    <button onclick="window.print()" class="g6-btn g6-btn-outline">
+      <i class="fas fa-print"></i> Print
+    </button>
+    <a href="{{ url_for('teacher.dashboard') }}" class="g6-btn g6-btn-outline">
+      <i class="fas fa-arrow-left"></i> Back
+    </a>
+  </div>
+</div>
+
+<div class="g6-card" style="padding:0; overflow:hidden;">
+  <div style="overflow-x:auto;">
+    <table class="g6-table">
+      <thead>
+        <tr>
+          <th style="width:80px;">Position</th>
+          <th>Student Name</th>
+          <th>Adm No.</th>
+          <th style="text-align:center;">Subjects</th>
+          <th style="text-align:center;">Total Marks</th>
+          <th style="text-align:center;">Average</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for perf in performances %}
+        <tr>
+          <td>
+            {% set pos = perf.position %}
+            {% if pos == 1 and perf.num_subjects > 0 %}
+              <span style="background:#fef08a; color:#854d0e; font-weight:800;
+                           padding:0.25rem 0.65rem; border-radius:6px; font-family:monospace;">
+                {{ perf.position_str }}
+              </span>
+            {% elif pos == 2 and perf.num_subjects > 0 %}
+              <span style="background:#e2e8f0; color:#334155; font-weight:800;
+                           padding:0.25rem 0.65rem; border-radius:6px; font-family:monospace;">
+                {{ perf.position_str }}
+              </span>
+            {% elif pos == 3 and perf.num_subjects > 0 %}
+              <span style="background:#fed7aa; color:#9a3412; font-weight:800;
+                           padding:0.25rem 0.65rem; border-radius:6px; font-family:monospace;">
+                {{ perf.position_str }}
+              </span>
+            {% else %}
+              <span style="background:var(--slate-100); color:var(--slate-700); font-weight:700;
+                           padding:0.25rem 0.65rem; border-radius:6px; font-family:monospace;">
+                {{ perf.position_str }}
+              </span>
+            {% endif %}
+          </td>
+          <td>
+            <span style="font-weight:700; text-transform:uppercase;">
+              {{ perf.student.last_name }}, {{ perf.student.first_name }}
+            </span>
+          </td>
+          <td class="g6-muted g6-text-sm">{{ perf.student.admission_number }}</td>
+          <td style="text-align:center;">{{ perf.num_subjects }}</td>
+          <td style="text-align:center; font-weight:800; color:var(--accent); font-size:1rem;">
+            {{ perf.total_marks }}
+          </td>
+          <td style="text-align:center; font-weight:700;">
+            {{ perf.average }}%
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="g6-empty">
+            <i class="fas fa-folder-open"></i>
+            <p>No students found in this class for the current term.</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+@media print {
+  @page { size: A4 portrait; margin: 10mm; }
+  nav, .g6-bottom-nav, button, a.g6-btn { display: none !important; }
+  .g6-card { box-shadow: none; border: 1px solid #000; }
+  .g6-table th, .g6-table td { border: 1px solid #000; font-size: 0.8rem; padding: 0.3rem 0.5rem; }
+}
+</style>
+{% endblock %}

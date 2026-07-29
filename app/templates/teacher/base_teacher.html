@@ -1,0 +1,66 @@
+{% extends 'shared/base.html' %}
+
+{% block accent_color %}var(--role-teacher){% endblock %}
+
+{% block sidebar %}
+<div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em;
+            color:var(--slate-400); padding:0 0.5rem 0.75rem; margin-bottom:0.5rem;
+            border-bottom:1px solid var(--slate-100);">
+  Instructor Portal
+</div>
+<a href="{{ url_for('teacher.dashboard') }}"
+   class="{{ 'active' if request.endpoint == 'teacher.dashboard' else '' }}">
+  <i class="fas fa-chalkboard"></i> My Dashboard
+</a>
+
+{% if current_user.role == 'FormMaster' and form_class is defined and form_class %}
+<a href="{{ url_for('teacher.master_list', class_id=form_class.id) }}"
+   class="{{ 'active' if request.endpoint == 'teacher.master_list' else '' }}">
+  <i class="fas fa-list-ol"></i> Class Master List
+</a>
+<a href="{{ url_for('teacher.class_management', class_id=form_class.id) }}"
+   class="{{ 'active' if request.endpoint == 'teacher.class_management' else '' }}">
+  <i class="fas fa-tasks"></i> Class Management
+</a>
+{% endif %}
+
+<a href="{{ url_for('teacher.notifications') }}"
+   class="{{ 'active' if 'notification' in request.endpoint else '' }}">
+  <i class="fas fa-bell"></i> Messages
+  {% if unread is defined and unread > 0 %}
+  <span style="margin-left:auto; background:var(--danger); color:#fff; font-size:0.65rem;
+               font-weight:700; padding:1px 6px; border-radius:20px;">{{ unread }}</span>
+  {% endif %}
+</a>
+
+<div style="margin-top:auto; padding-top:1rem; border-top:1px solid var(--slate-100);">
+  <a href="{{ url_for('auth.change_password') }}"><i class="fas fa-key"></i> Change Password</a>
+  <a href="{{ url_for('auth.logout') }}" style="color:var(--danger)"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
+{% endblock %}
+
+{% block bottom_nav %}
+<a href="{{ url_for('teacher.dashboard') }}"
+   class="{{ 'active' if request.endpoint == 'teacher.dashboard' else '' }}">
+  <i class="fas fa-chalkboard"></i><span>Home</span>
+</a>
+
+{% if current_user.role == 'FormMaster' and form_class is defined and form_class %}
+<a href="{{ url_for('teacher.master_list', class_id=form_class.id) }}"
+   class="{{ 'active' if request.endpoint == 'teacher.master_list' else '' }}">
+  <i class="fas fa-list-ol"></i><span>Ranking</span>
+</a>
+<a href="{{ url_for('teacher.class_management', class_id=form_class.id) }}"
+   class="{{ 'active' if request.endpoint == 'teacher.class_management' else '' }}">
+  <i class="fas fa-tasks"></i><span>Manage</span>
+</a>
+{% endif %}
+
+<a href="{{ url_for('teacher.notifications') }}"
+   class="{{ 'active' if 'notification' in request.endpoint else '' }}">
+  <i class="fas fa-bell"></i><span>Messages</span>
+</a>
+<a href="{{ url_for('auth.logout') }}">
+  <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+</a>
+{% endblock %}

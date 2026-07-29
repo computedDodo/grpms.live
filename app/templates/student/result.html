@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report Card — {{ student.last_name }}, {{ student.first_name }}</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Plus Jakarta Sans',sans-serif; background:#fff; color:#0f172a; }
+
+  /* Screen chrome */
+  .no-print { display:flex; justify-content:space-between; align-items:center;
+              padding:0.85rem 1.5rem; border-bottom:1px solid #e2e8f0; flex-wrap:wrap; gap:0.5rem; }
+  .btn { display:inline-flex; align-items:center; gap:0.4rem; padding:0.55rem 1.1rem;
+         border-radius:8px; font-weight:700; font-size:0.85rem; text-decoration:none;
+         border:none; cursor:pointer; }
+  .btn-dark { background:#0f172a; color:#fff; }
+  .btn-outline { background:transparent; border:1.5px solid #e2e8f0; color:#334155; }
+
+  /* Report card layout */
+  .rc-wrap { max-width:860px; margin:0 auto; padding:2rem 1.5rem 3rem; }
+
+  /* Header */
+  .rc-header { display:flex; align-items:center; gap:1.25rem; flex-wrap:wrap;
+               border-bottom:4px double #1d4ed8; padding-bottom:1.25rem;
+               margin-bottom:1.5rem; }
+  .rc-header img { height:80px; object-fit:contain; border-radius:6px; }
+  .rc-header .text { flex:1; text-align:center; }
+  .school-name { font-family:'Lora',serif; font-size:1.8rem; font-weight:700;
+                  color:#1d4ed8; text-transform:uppercase; }
+  .school-motto { color:#16a34a; font-style:italic; font-size:0.95rem; font-weight:600; }
+  .report-label { font-weight:700; letter-spacing:2px; font-size:0.82rem;
+                  text-transform:uppercase; margin-top:6px; }
+
+  /* Student info grid */
+  .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;
+               background:#f8fafc; padding:1rem 1.25rem; border:1px solid #e2e8f0;
+               border-radius:8px; margin-bottom:1.5rem; }
+  .info-item { font-size:0.9rem; }
+  .info-label { font-weight:700; color:#475569; margin-right:0.4rem; }
+
+  /* Score table */
+  .score-table { width:100%; border-collapse:collapse; margin-bottom:1.5rem; }
+  .score-table th, .score-table td { border:1px solid #cbd5e1; padding:0.6rem 0.5rem;
+                                     text-align:center; font-size:0.85rem; }
+  .score-table th { background:#f1f5f9; font-weight:700; text-transform:uppercase;
+                    font-size:0.72rem; color:#0f172a; }
+  .score-table td.subj { text-align:left; font-weight:600; }
+  .fail { color:#dc2626; font-weight:700; }
+
+  /* Summary */
+  .summary-box { border:2px solid #1d4ed8; padding:1rem 1.5rem; border-radius:8px;
+                 background:#eff6ff; margin-bottom:1.5rem; display:grid;
+                 grid-template-columns:1fr 1fr; gap:1rem; text-align:center; }
+  .summary-box .label { font-size:0.72rem; text-transform:uppercase; font-weight:700;
+                         color:#475569; }
+  .summary-box .value { font-size:1.5rem; font-weight:800; color:#0f172a; margin-top:4px; }
+
+  /* Signatures */
+  .sig-area { display:flex; justify-content:space-between; margin-top:3rem; flex-wrap:wrap; gap:2rem; }
+  .sig-block { width:240px; }
+  .sig-line { border-top:1px solid #000; padding-top:6px; font-weight:700;
+               font-size:0.85rem; text-align:center; }
+
+  /* Print */
+  @media print {
+    @page { size:A4 portrait; margin:8mm; }
+    .no-print { display:none !important; }
+    body { font-size:10px; }
+    .rc-wrap { padding:0; max-width:100%; }
+    .school-name { font-size:1.4rem; }
+    .info-grid { padding:0.5rem; gap:0.25rem; margin-bottom:0.75rem; }
+    .score-table th, .score-table td { padding:0.2rem 0.3rem; font-size:0.72rem;
+                                        border:1px solid #000; }
+    .summary-box { padding:0.5rem; margin-bottom:0.75rem; }
+    .sig-area { margin-top:1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="no-print">
+  <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline">← Back</a>
+  <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+    <span style="font-size:0.78rem; color:#16a34a; font-weight:600; background:#f0fdf4;
+                 padding:0.3rem 0.75rem; border-radius:6px; border:1px solid #bbf7d0;">
+      <i class="fas fa-check-circle"></i> Coupon activated
+    </span>
+    <button onclick="window.print()" class="btn btn-dark">
+      <i class="fas fa-download"></i> Download PDF
+    </button>
+  </div>
+</div>
+
+<div class="rc-wrap">
+  <div class="rc-header">
+    {% if school and school.logo_path %}
+    <img src="{{ url_for('static', filename=school.logo_path) }}" alt="School Logo">
+    {% endif %}
+    <div class="text">
+      <div class="school-name">{{ school.name if school else 'School' }}</div>
+      {% if school and school.motto %}
+      <div class="school-motto">{{ school.motto }}</div>
+      {% endif %}
+      <div class="report-label">Termly Academic Report Card</div>
+      <div style="font-size:0.82rem; color:#64748b; margin-top:4px;">
+        {{ session_obj.session_name }} Academic Session — {{ term.term_name }}
+      </div>
+    </div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-item">
+      <span class="info-label">Student Name:</span>
+      <span style="font-weight:700; text-transform:uppercase;">
+        {{ student.last_name }}, {{ student.first_name }}
+      </span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">Admission No:</span>{{ student.admission_number }}
+    </div>
+    <div class="info-item">
+      <span class="info-label">Class:</span>
+      {{ student.student_class.class_name if student.student_class else 'N/A' }}
+    </div>
+    <div class="info-item">
+      <span class="info-label">No. in Class:</span>{{ class_size }}
+    </div>
+  </div>
+
+  <table class="score-table">
+    <thead>
+      <tr>
+        <th class="subj" style="text-align:left;">Subject</th>
+        <th>CA 1<br><small>/10</small></th>
+        <th>CA 2<br><small>/10</small></th>
+        <th>Ass 1<br><small>/10</small></th>
+        <th>Ass 2<br><small>/10</small></th>
+        <th>Exam<br><small>/60</small></th>
+        <th>Total<br><small>/100</small></th>
+        <th>Grade</th>
+        <th>Remark</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for score in scores %}
+      <tr>
+        <td class="subj">{{ score.subject.subject_name }}</td>
+        <td>{{ score.ca_1 }}</td>
+        <td>{{ score.ca_2 }}</td>
+        <td>{{ score.assign_1 }}</td>
+        <td>{{ score.assign_2 }}</td>
+        <td>{{ score.exam }}</td>
+        <td class="{% if score.total_score < 40 %}fail{% endif %}" style="font-weight:700;">
+          {{ score.total_score }}
+        </td>
+        <td style="font-weight:700;">{{ score.grade }}</td>
+        <td>{{ score.remark }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="9" style="text-align:center; padding:2rem; color:#94a3b8;">
+          No scores recorded yet.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if total_subjects > 0 %}
+  <div class="summary-box">
+    <div>
+      <div class="label">Total Marks Obtained</div>
+      <div class="value">
+        {{ total_marks }}
+        <span style="font-size:0.9rem; color:#64748b; font-weight:500;">
+          / {{ total_subjects * 100 }}
+        </span>
+      </div>
+    </div>
+    <div>
+      <div class="label">Overall Average</div>
+      <div class="value" style="color:#1d4ed8;">{{ average }}%</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="sig-area">
+    <div class="sig-block">
+      {% if student.student_class %}
+      <div style="font-size:0.82rem; line-height:1.6; margin-bottom:1.5rem;">
+        <strong>Form Master's Remark:</strong><br>
+        <em style="color:#1d4ed8; font-weight:600;">
+          {% if average >= 70 %}{{ student.student_class.remark_a }}
+          {% elif average >= 60 %}{{ student.student_class.remark_b }}
+          {% elif average >= 50 %}{{ student.student_class.remark_c }}
+          {% elif average >= 40 %}{{ student.student_class.remark_d }}
+          {% else %}{{ student.student_class.remark_f }}{% endif %}
+        </em>
+      </div>
+      {% endif %}
+      <div class="sig-line">Form Master's Signature &amp; Date</div>
+    </div>
+
+    <div class="sig-block" style="text-align:center; position:relative;">
+      <div style="height:65px; position:relative; margin-bottom:5px;">
+        {% if school and school.stamp_path %}
+        <img src="{{ url_for('static', filename=school.stamp_path) }}"
+             style="height:70px; position:absolute; bottom:0; left:50%;
+                    transform:translateX(-50%); opacity:0.85;" alt="Stamp">
+        {% endif %}
+        {% if school and school.signature_path %}
+        <img src="{{ url_for('static', filename=school.signature_path) }}"
+             style="height:55px; position:absolute; bottom:-5px; left:50%;
+                    transform:translateX(-50%); z-index:2;" alt="Signature">
+        {% endif %}
+      </div>
+      <div class="sig-line">
+        {{ school.principal_name if school else 'Principal' }}
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

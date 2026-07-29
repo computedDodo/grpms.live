@@ -1,0 +1,151 @@
+{% extends 'student/base_student.html' %}
+{% block title %}My Dashboard — {{ student.first_name }}{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Student Portal</div>
+  <h2 class="g6-page-title">
+    Welcome back, {{ student.first_name }}!
+  </h2>
+</div>
+
+<!-- Profile card -->
+<div class="g6-card" style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;
+                             margin-bottom:1.25rem; padding:1rem 1.25rem;">
+  <div style="width:52px; height:52px; border-radius:50%;
+              background:color-mix(in srgb,var(--accent) 15%,white);
+              color:var(--accent); display:flex; align-items:center; justify-content:center;
+              font-size:1.3rem; font-weight:800; flex-shrink:0;">
+    {{ student.first_name[0] }}{{ student.last_name[0] }}
+  </div>
+  <div style="flex:1;">
+    <div style="font-weight:800; font-size:1rem; color:var(--slate-900);">
+      {{ student.last_name }}, {{ student.first_name }}
+    </div>
+    <div class="g6-text-sm g6-muted">{{ student.admission_number }}</div>
+  </div>
+  <div style="text-align:right;">
+    <div style="font-size:0.72rem; text-transform:uppercase; font-weight:700;
+                color:var(--slate-500);">Current Class</div>
+    <div style="font-weight:700; color:var(--slate-900);">
+      {{ student.student_class.class_name if student.student_class else 'Unassigned' }}
+    </div>
+  </div>
+</div>
+
+<!-- Active term: coupon status + activate or view result -->
+{% if active_session and active_term %}
+<div class="g6-card" style="margin-bottom:1.25rem; border:2px solid
+     {{ 'var(--success)' if active_coupon_status else 'var(--accent)' }};">
+  <div style="display:flex; justify-content:space-between; align-items:center;
+              flex-wrap:wrap; gap:0.75rem; margin-bottom:0.85rem;">
+    <div>
+      <div style="font-size:0.72rem; text-transform:uppercase; font-weight:700;
+                  color:var(--slate-500);">Current Term</div>
+      <div style="font-weight:700; font-size:0.95rem; color:var(--slate-900);">
+        {{ active_term.term_name }} — {{ active_session.session_name }}
+      </div>
+    </div>
+    {% if active_coupon_status %}
+    <span class="g6-badge g6-badge-success">
+      <i class="fas fa-check-circle"></i> Coupon Activated
+    </span>
+    {% else %}
+    <span class="g6-badge g6-badge-warning">
+      <i class="fas fa-ticket-alt"></i> Coupon Required
+    </span>
+    {% endif %}
+  </div>
+
+  {% if active_coupon_status %}
+  <!-- Already activated — go straight to result -->
+  <a href="{{ url_for('student.view_result', term_id=active_term.id) }}"
+     class="g6-btn g6-btn-primary g6-btn-block">
+    <i class="fas fa-file-alt"></i> View My Report Card
+  </a>
+  {% else %}
+  <!-- Not yet activated — show coupon entry form -->
+  <p class="g6-text-sm g6-muted" style="margin-bottom:0.85rem;">
+    Enter the coupon code given to you by your school to unlock your results for this term.
+    Each code can only be used once.
+  </p>
+  <form method="POST" action="{{ url_for('student.activate_coupon') }}"
+        style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+    <input type="text" name="coupon_code" class="g6-input"
+           placeholder="Enter coupon code..."
+           style="flex:1; min-width:160px; font-family:monospace; letter-spacing:0.1em;
+                  text-transform:uppercase; font-size:1rem; font-weight:700;"
+           maxlength="20" required autocomplete="off" autofocus>
+    <button type="submit" class="g6-btn g6-btn-primary" style="white-space:nowrap;">
+      <i class="fas fa-unlock-alt"></i> Activate
+    </button>
+  </form>
+  {% endif %}
+</div>
+
+{% else %}
+<div class="g6-flash g6-flash-warning" style="margin-bottom:1.25rem;">
+  <i class="fas fa-exclamation-triangle"></i>
+  <span>No active term is currently set. Contact your school to check the academic calendar.</span>
+</div>
+{% endif %}
+
+<!-- Past results selector -->
+{% if all_sessions %}
+<div class="g6-card">
+  <div style="font-size:0.88rem; font-weight:700; color:var(--slate-900); margin-bottom:0.75rem;">
+    <i class="fas fa-history"></i> View Past Results
+  </div>
+  <p class="g6-text-sm g6-muted" style="margin-bottom:1rem;">
+    Select a previous session and term to view your result. You must have activated
+    the coupon for that term.
+  </p>
+  <form method="GET" id="pastResultForm"
+        style="display:flex; flex-wrap:wrap; gap:0.75rem; align-items:flex-end;">
+    <div style="flex:2; min-width:160px;">
+      <label class="g6-label">Session</label>
+      <select name="session_id" class="g6-select" id="sessionPicker"
+              onchange="filterPastTerms()">
+        <option value="" disabled selected>Select session...</option>
+        {% for s in all_sessions %}
+        <option value="{{ s.id }}">{{ s.session_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="flex:2; min-width:150px;">
+      <label class="g6-label">Term</label>
+      <select name="term_id" class="g6-select" id="termPicker" disabled>
+        <option value="" disabled selected>Select session first...</option>
+        {% for s in all_sessions %}
+          {% for t in s.terms %}
+          <option value="{{ t.id }}" data-session="{{ s.id }}">{{ t.term_name }}</option>
+          {% endfor %}
+        {% endfor %}
+      </select>
+    </div>
+    <button type="button" class="g6-btn g6-btn-outline" onclick="goToPastResult()">
+      <i class="fas fa-search"></i> View
+    </button>
+  </form>
+</div>
+{% endif %}
+
+<script>
+const allTermOpts = Array.from(document.querySelectorAll('#termPicker option[data-session]'));
+
+function filterPastTerms() {
+  const sid = document.getElementById('sessionPicker').value;
+  const tp  = document.getElementById('termPicker');
+  tp.disabled = false;
+  tp.innerHTML = '<option value="" disabled selected>Select term...</option>';
+  allTermOpts.filter(o => o.dataset.session === sid)
+             .forEach(o => tp.appendChild(o.cloneNode(true)));
+}
+
+function goToPastResult() {
+  const termId = document.getElementById('termPicker').value;
+  if (!termId) { alert('Please select a term first.'); return; }
+  window.location.href = '/student/result/' + termId;
+}
+</script>
+{% endblock %}

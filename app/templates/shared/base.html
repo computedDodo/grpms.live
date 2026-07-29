@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>{% block title %}GRPMS — Grade6ix Tech Solutions{% endblock %}</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/g6-design-system.css') }}">
+
+    <style>
+      :root { --accent: {% block accent_color %}var(--g6-cyan){% endblock %}; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="g6-app">
+
+    {% if current_user.is_authenticated %}
+    <header class="g6-topbar">
+        <!-- Brand -->
+        <a href="{{ url_for('auth.dashboard_router') }}" class="g6-brand">
+            {% if school_settings and school_settings.logo_path %}
+                <img src="{{ url_for('static', filename=school_settings.logo_path) }}" alt="Logo">
+            {% else %}
+                <img src="{{ url_for('static', filename='img/grade6ix-logo.png') }}"
+                     alt="Grade6ix" style="height:28px;"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+                <span style="display:none; width:28px; height:28px; background:linear-gradient(135deg,var(--g6-cyan),var(--g6-blue)); border-radius:6px; align-items:center; justify-content:center; font-weight:800; color:white; font-size:0.75rem;">G6</span>
+            {% endif %}
+            <span class="g6-brand-name">GRPMS</span>
+        </a>
+
+        <!-- Right side: role pill + user menu -->
+        <div style="display:flex; align-items:center; gap:0.5rem; position:relative;">
+            <span class="g6-role-pill">{{ current_user.role }}</span>
+            <button class="g6-user-btn"
+                    onclick="document.getElementById('userMenu').classList.toggle('g6-hidden')"
+                    aria-label="User menu">
+                <i class="fas fa-user-circle"></i>
+            </button>
+            <div id="userMenu" class="g6-user-menu g6-hidden">
+                <div style="padding:0.75rem 1rem; border-bottom:1px solid var(--slate-100);">
+                    <div style="font-weight:700; font-size:0.85rem; color:var(--slate-900);">
+                        {{ current_user.username }}
+                    </div>
+                    <div style="font-size:0.72rem; color:var(--slate-500); margin-top:2px;">
+                        {{ school_settings.name if school_settings else 'Platform Admin' }}
+                    </div>
+                </div>
+                <a href="{{ url_for('auth.change_password') }}">
+                    <i class="fas fa-key"></i> Change Password
+                </a>
+                <a href="{{ url_for('auth.logout') }}" class="danger">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </header>
+    {% endif %}
+
+    <main class="g6-content">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="g6-flash g6-flash-{{ 'danger' if category == 'error' else category }}">
+                    <i class="fas fa-{{ 'check-circle' if category == 'success'
+                                        else 'exclamation-triangle' if category in ['warning','danger','error']
+                                        else 'info-circle' }}"
+                       style="flex-shrink:0; margin-top:2px;"></i>
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if current_user.is_authenticated %}
+        <div class="g6-desktop-shell">
+            <nav class="g6-sidebar">
+                {% block sidebar %}{% endblock %}
+            </nav>
+            <div>
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+        {% else %}
+            {% block guest_content %}{% endblock %}
+        {% endif %}
+    </main>
+
+    {% if current_user.is_authenticated %}
+    <nav class="g6-bottom-nav">
+        {% block bottom_nav %}{% endblock %}
+    </nav>
+    {% endif %}
+
+</div>
+
+<script>
+// Close user menu on outside click
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('userMenu');
+    if (!menu) return;
+    if (!e.target.closest('.g6-user-btn') && !e.target.closest('.g6-user-menu')) {
+        menu.classList.add('g6-hidden');
+    }
+});
+</script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

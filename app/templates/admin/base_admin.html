@@ -1,0 +1,69 @@
+{% extends 'shared/base.html' %}
+{% block accent_color %}var(--role-admin){% endblock %}
+
+{% block sidebar %}
+<div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;
+            color:var(--slate-400);padding:0 0.5rem 0.75rem;margin-bottom:0.5rem;
+            border-bottom:1px solid var(--slate-100);">
+  School Admin
+</div>
+<a href="{{ url_for('admin.dashboard') }}"
+   class="{{ 'active' if request.endpoint=='admin.dashboard' else '' }}">
+  <i class="fas fa-th-large"></i> Dashboard
+</a>
+<a href="{{ url_for('admin.manage_students') }}"
+   class="{{ 'active' if 'student' in request.endpoint else '' }}">
+  <i class="fas fa-user-graduate"></i> Students
+</a>
+<a href="{{ url_for('admin.manage_classes') }}"
+   class="{{ 'active' if 'class' in request.endpoint and 'broad' not in request.endpoint else '' }}">
+  <i class="fas fa-door-open"></i> Classes
+</a>
+<a href="{{ url_for('admin.manage_subjects') }}"
+   class="{{ 'active' if request.endpoint=='admin.manage_subjects' else '' }}">
+  <i class="fas fa-book-open"></i> Subjects
+</a>
+<a href="{{ url_for('admin.manage_allocations') }}"
+   class="{{ 'active' if request.endpoint=='admin.manage_allocations' else '' }}">
+  <i class="fas fa-network-wired"></i> Allocations
+</a>
+<a href="{{ url_for('admin.manage_form_masters') }}"
+   class="{{ 'active' if request.endpoint=='admin.manage_form_masters' else '' }}">
+  <i class="fas fa-chalkboard-teacher"></i> Form Masters
+</a>
+<a href="{{ url_for('admin.archive_vault') }}"
+   class="{{ 'active' if request.endpoint=='admin.archive_vault' else '' }}">
+  <i class="fas fa-archive"></i> Archive Vault
+</a>
+<a href="{{ url_for('admin.notifications') }}"
+   class="{{ 'active' if 'notification' in request.endpoint else '' }}">
+  <i class="fas fa-bell"></i> Notifications
+</a>
+<div style="margin-top:auto;padding-top:1rem;border-top:1px solid var(--slate-100);">
+  <a href="{{ url_for('auth.change_password') }}"><i class="fas fa-key"></i> Change Password</a>
+  <a href="{{ url_for('auth.logout') }}" style="color:var(--danger)"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
+{% endblock %}
+
+{% block bottom_nav %}
+<a href="{{ url_for('admin.dashboard') }}"
+   class="{{ 'active' if request.endpoint=='admin.dashboard' else '' }}">
+  <i class="fas fa-th-large"></i><span>Home</span>
+</a>
+<a href="{{ url_for('admin.manage_students') }}"
+   class="{{ 'active' if 'student' in request.endpoint else '' }}">
+  <i class="fas fa-user-graduate"></i><span>Students</span>
+</a>
+<a href="{{ url_for('admin.manage_classes') }}"
+   class="{{ 'active' if 'class' in request.endpoint and 'broad' not in request.endpoint else '' }}">
+  <i class="fas fa-door-open"></i><span>Classes</span>
+</a>
+<a href="{{ url_for('admin.manage_allocations') }}"
+   class="{{ 'active' if request.endpoint=='admin.manage_allocations' else '' }}">
+  <i class="fas fa-network-wired"></i><span>Allocations</span>
+</a>
+<a href="{{ url_for('admin.notifications') }}"
+   class="{{ 'active' if 'notification' in request.endpoint else '' }}">
+  <i class="fas fa-bell"></i><span>Inbox</span>
+</a>
+{% endblock %}

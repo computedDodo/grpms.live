@@ -1,0 +1,76 @@
+{% extends 'teacher/base_teacher.html' %}
+{% block title %}Compose Message — Teacher{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Communications</div>
+  <h2 class="g6-page-title"><i class="fas fa-paper-plane"></i> Compose Message</h2>
+</div>
+
+<div class="g6-card" style="max-width:580px;">
+  <form method="POST" action="{{ url_for('teacher.compose_notification') }}" id="composeForm">
+
+    <div style="margin-bottom:1rem;">
+      <label class="g6-label">Send To <span style="color:var(--danger)">*</span></label>
+      <select name="recipient_type" class="g6-select" required id="recipientType"
+              onchange="toggleStudentPicker()">
+        <option value="" disabled selected>Choose recipient...</option>
+        <option value="admin">School Admin (feedback / complaint)</option>
+        <option value="superadmin">School SuperAdmin (feedback / complaint)</option>
+        {% if notifiable_students %}
+        <option value="all_my_students">All My Students (class notification)</option>
+        <option value="specific_student">Specific Student</option>
+        {% endif %}
+      </select>
+    </div>
+
+    <!-- Student picker — shown only when specific_student is selected -->
+    <div id="studentPicker" style="display:none; margin-bottom:1rem;">
+      <label class="g6-label">Select Student <span style="color:var(--danger)">*</span></label>
+      <select name="student_id" class="g6-select" id="studentSelect">
+        <option value="" disabled selected>Choose student...</option>
+        {% for student in notifiable_students %}
+        <option value="{{ student.user_id }}">
+          {{ student.last_name }}, {{ student.first_name }}
+          ({{ student.admission_number }})
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <label class="g6-label">Subject <span style="color:var(--danger)">*</span></label>
+      <input type="text" name="subject" class="g6-input"
+             placeholder="Message subject" required>
+    </div>
+
+    <div style="margin-bottom:1.25rem;">
+      <label class="g6-label">Message <span style="color:var(--danger)">*</span></label>
+      <textarea name="body" class="g6-input g6-textarea" rows="6"
+                placeholder="Type your message here..." required></textarea>
+    </div>
+
+    <div style="display:flex; gap:0.75rem;">
+      <button type="submit" class="g6-btn g6-btn-primary" style="flex:1;">
+        <i class="fas fa-paper-plane"></i> Send Message
+      </button>
+      <a href="{{ url_for('teacher.notifications') }}" class="g6-btn g6-btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<script>
+function toggleStudentPicker() {
+  const type   = document.getElementById('recipientType').value;
+  const picker = document.getElementById('studentPicker');
+  const sel    = document.getElementById('studentSelect');
+  if (type === 'specific_student') {
+    picker.style.display = 'block';
+    sel.required = true;
+  } else {
+    picker.style.display = 'none';
+    sel.required = false;
+  }
+}
+</script>
+{% endblock %}

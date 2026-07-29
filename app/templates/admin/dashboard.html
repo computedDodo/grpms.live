@@ -1,0 +1,75 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Admin Dashboard — {{ school_settings.name if school_settings else 'School' }}{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">School Admin</div>
+  <h2 class="g6-page-title"><i class="fas fa-th-large"></i>
+    {{ school_settings.name if school_settings else 'School Dashboard' }}
+  </h2>
+</div>
+
+{% if active_term %}
+<div class="g6-flash g6-flash-success" style="margin-bottom:1.25rem;">
+  <i class="fas fa-calendar-check"></i>
+  <span>Active: <strong>{{ active_term.term_name }}</strong> —
+  <strong>{{ active_session.session_name }}</strong></span>
+</div>
+{% else %}
+<div class="g6-flash g6-flash-warning" style="margin-bottom:1.25rem;">
+  <i class="fas fa-exclamation-triangle"></i>
+  <span>No active session/term. Ask the SuperAdmin to configure Academic Setup.</span>
+</div>
+{% endif %}
+
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:1.5rem;">
+  <div class="g6-card" style="text-align:center;">
+    <div style="font-size:2.25rem;font-weight:800;color:var(--accent);line-height:1;">{{ total_students }}</div>
+    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:var(--slate-500);margin-top:4px;">Students</div>
+    <a href="{{ url_for('admin.manage_students') }}" class="g6-text-sm" style="color:var(--accent);">Manage →</a>
+  </div>
+  <div class="g6-card" style="text-align:center;">
+    <div style="font-size:2.25rem;font-weight:800;color:var(--role-teacher);line-height:1;">{{ total_staff }}</div>
+    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:var(--slate-500);margin-top:4px;">Teaching Staff</div>
+  </div>
+  <div class="g6-card" style="text-align:center;">
+    <div style="font-size:2.25rem;font-weight:800;color:var(--slate-700);line-height:1;">{{ total_classes }}</div>
+    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:var(--slate-500);margin-top:4px;">Classes</div>
+    <a href="{{ url_for('admin.manage_classes') }}" class="g6-text-sm" style="color:var(--accent);">Manage →</a>
+  </div>
+  <div class="g6-card" style="text-align:center;">
+    <div style="font-size:2.25rem;font-weight:800;color:var(--slate-700);line-height:1;">{{ total_subjects }}</div>
+    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:var(--slate-500);margin-top:4px;">Subjects</div>
+    <a href="{{ url_for('admin.manage_subjects') }}" class="g6-text-sm" style="color:var(--accent);">Manage →</a>
+  </div>
+</div>
+
+<div class="g6-card">
+  <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;
+              color:var(--slate-500);margin-bottom:0.85rem;">Quick Actions</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.75rem;">
+    <a href="{{ url_for('admin.manage_students') }}" class="g6-btn g6-btn-outline g6-btn-block">
+      <i class="fas fa-user-plus"></i> Enrol Student
+    </a>
+    <a href="{{ url_for('admin.manage_allocations') }}" class="g6-btn g6-btn-outline g6-btn-block">
+      <i class="fas fa-network-wired"></i> Allocations
+    </a>
+    <a href="{{ url_for('admin.manage_form_masters') }}" class="g6-btn g6-btn-outline g6-btn-block">
+      <i class="fas fa-chalkboard-teacher"></i> Form Masters
+    </a>
+    <a href="{{ url_for('admin.archive_vault') }}" class="g6-btn g6-btn-outline g6-btn-block">
+      <i class="fas fa-archive"></i> Archive Vault
+    </a>
+    <a href="{{ url_for('admin.notifications') }}" class="g6-btn g6-btn-outline g6-btn-block" style="position:relative;">
+      <i class="fas fa-bell"></i> Notifications
+      {% if unread > 0 %}
+      <span style="background:var(--danger);color:#fff;border-radius:12px;
+                   font-size:0.65rem;font-weight:700;padding:1px 7px;margin-left:4px;">{{ unread }} new</span>
+      {% endif %}
+    </a>
+    <a href="{{ url_for('admin.compose_notification') }}" class="g6-btn g6-btn-primary g6-btn-block">
+      <i class="fas fa-paper-plane"></i> Send Message
+    </a>
+  </div>
+</div>
+{% endblock %}

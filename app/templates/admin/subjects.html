@@ -1,0 +1,105 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Manage Subjects{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Curriculum</div>
+  <h2 class="g6-page-title"><i class="fas fa-book-open"></i> Manage Subjects</h2>
+</div>
+
+<div style="display:flex; flex-direction:column; gap:1.25rem;">
+
+  <!-- Add subject form -->
+  <div class="g6-card">
+    <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:0.85rem;">
+      <i class="fas fa-plus-circle" style="color:var(--accent);"></i> Add Subject
+    </h3>
+    <form method="POST" action="{{ url_for('admin.manage_subjects') }}">
+      <div style="display:grid; grid-template-columns:1fr; gap:0.85rem;">
+        <div>
+          <label class="g6-label">Subject Name <span style="color:var(--danger)">*</span></label>
+          <input type="text" name="subject_name" class="g6-input"
+                 placeholder="e.g. Mathematics" required>
+        </div>
+        <div>
+          <label class="g6-label">Subject Code <span style="color:var(--danger)">*</span></label>
+          <input type="text" name="subject_code" class="g6-input"
+                 placeholder="e.g. MTH" maxlength="10"
+                 style="text-transform:uppercase; font-family:monospace; font-weight:700;" required>
+        </div>
+        <div>
+          <label class="g6-label">
+            Section <span style="color:var(--danger)">*</span>
+            <span style="font-weight:400; color:var(--slate-500); font-size:0.78rem;">
+              — which students see this subject
+            </span>
+          </label>
+          <select name="section" class="g6-select" required>
+            {% for s in sections %}
+            <option value="{{ s }}">{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="g6-btn g6-btn-primary">
+          <i class="fas fa-save"></i> Add Subject
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Subject list grouped by section -->
+  <div class="g6-card">
+    <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:0.85rem;">
+      <i class="fas fa-list" style="color:var(--accent);"></i>
+      All Subjects
+      <span class="g6-badge g6-badge-neutral" style="margin-left:0.5rem;">{{ subjects|length }}</span>
+    </h3>
+
+    {% set section_colors = {
+      'All Sections':      '#475569',
+      'Nursery':           '#be185d',
+      'Primary':           '#0d9488',
+      'Junior Secondary':  '#2563eb',
+      'Senior Secondary':  '#7c3aed',
+    } %}
+
+    {% set ns = namespace(current_section='') %}
+    {% for subject in subjects %}
+      {% if subject.section != ns.current_section %}
+        {% set ns.current_section = subject.section %}
+        <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase;
+                    letter-spacing:0.06em; padding:0.6rem 0 0.4rem;
+                    color:{{ section_colors.get(subject.section, '#475569') }};
+                    border-bottom:1px solid var(--slate-100); margin-bottom:0.5rem;
+                    {% if not loop.first %}margin-top:1rem;{% endif %}">
+          <i class="fas fa-layer-group"></i> {{ subject.section }}
+        </div>
+      {% endif %}
+
+      <div style="display:flex; align-items:center; justify-content:space-between;
+                  padding:0.6rem 0; border-bottom:1px solid var(--slate-100);">
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+          <code style="font-size:0.82rem; font-weight:700; background:var(--slate-100);
+                       padding:2px 8px; border-radius:4px; min-width:48px; text-align:center;">
+            {{ subject.subject_code }}
+          </code>
+          <span style="font-weight:600; font-size:0.88rem;">{{ subject.subject_name }}</span>
+        </div>
+        <form action="{{ url_for('admin.delete_subject', subject_id=subject.id) }}"
+              method="POST" style="margin:0;"
+              onsubmit="return confirm('Delete {{ subject.subject_name }}? This cannot be undone.')">
+          <button type="submit" class="g6-btn g6-btn-outline"
+                  style="font-size:0.75rem; padding:0.3rem 0.65rem; color:var(--danger);">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </form>
+      </div>
+    {% else %}
+    <div class="g6-empty">
+      <i class="fas fa-book-open"></i>
+      <p>No subjects added yet.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

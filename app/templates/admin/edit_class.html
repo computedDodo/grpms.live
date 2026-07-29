@@ -1,0 +1,30 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Edit Class — Admin{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Classes</div>
+  <h2 class="g6-page-title"><i class="fas fa-edit"></i> Edit Class</h2>
+</div>
+<div class="g6-card" style="max-width:480px;">
+  <form method="POST" action="{{ url_for('admin.edit_class', class_id=cls.id) }}">
+    <div style="margin-bottom:1rem;">
+      <label class="g6-label">Class Name <span style="color:var(--danger)">*</span></label>
+      <input type="text" name="class_name" class="g6-input" value="{{ cls.class_name }}" required>
+    </div>
+    <div style="margin-bottom:1.5rem;">
+      <label class="g6-label">Section</label>
+      <select name="section" class="g6-select">
+        <option value="">General</option>
+        <option value="Nursery" {{ 'selected' if cls.section=='Nursery' }}>Nursery</option>
+        <option value="Primary" {{ 'selected' if cls.section=='Primary' }}>Primary</option>
+        <option value="Secondary" {{ 'selected' if cls.section=='Secondary' }}>Secondary</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:0.75rem;">
+      <button type="submit" class="g6-btn g6-btn-primary" style="flex:1;"><i class="fas fa-save"></i> Save</button>
+      <a href="{{ url_for('admin.manage_classes') }}" class="g6-btn g6-btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

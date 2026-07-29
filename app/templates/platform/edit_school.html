@@ -1,0 +1,32 @@
+{% extends 'platform/base_platform.html' %}
+{% block title %}Edit {{ school.name }} — GRPMS{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Schools</div>
+  <h2 class="g6-page-title"><i class="fas fa-edit"></i> Edit School</h2>
+</div>
+
+<div class="g6-card" style="max-width:560px;">
+  <form method="POST" action="{{ url_for('platform.edit_school', school_id=school.id) }}">
+    <div style="margin-bottom:1rem;">
+      <label class="g6-label" for="name">School Name <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="name" name="name" class="g6-input" value="{{ school.name }}" required>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label class="g6-label" for="motto">School Motto</label>
+      <input type="text" id="motto" name="motto" class="g6-input" value="{{ school.motto or '' }}">
+    </div>
+    <div style="margin-bottom:1.5rem;">
+      <label class="g6-label" for="principal_name">Principal's Name</label>
+      <input type="text" id="principal_name" name="principal_name" class="g6-input" value="{{ school.principal_name or '' }}">
+    </div>
+    <div style="display:flex; gap:0.75rem;">
+      <button type="submit" class="g6-btn g6-btn-primary" style="flex:1;">
+        <i class="fas fa-save"></i> Save Changes
+      </button>
+      <a href="{{ url_for('platform.dashboard') }}" class="g6-btn g6-btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

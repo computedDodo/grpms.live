@@ -1,0 +1,48 @@
+{% extends 'superadmin/base_superadmin.html' %}
+{% block title %}Send Message — {{ school.name }}{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Communications</div>
+  <h2 class="g6-page-title"><i class="fas fa-paper-plane"></i> Send Message</h2>
+  <a href="{{ url_for('superadmin.notifications') }}" class="g6-btn g6-btn-outline"
+     style="font-size:0.82rem; padding:0.5rem 1rem; margin-top:0.5rem;">
+    <i class="fas fa-arrow-left"></i> Back to Inbox
+  </a>
+</div>
+
+<div class="g6-card" style="max-width:600px;">
+  <form method="POST" action="{{ url_for('superadmin.compose_notification') }}">
+
+    <div style="margin-bottom:1rem;">
+      <label class="g6-label">Send To <span style="color:var(--danger)">*</span></label>
+      <select name="recipient_type" class="g6-select" required>
+        <option value="" disabled selected>Choose recipient...</option>
+        <option value="platform">Platform Admin (feedback / complaint)</option>
+        <option value="broadcast">Everyone in {{ school.name }}</option>
+        <option value="Admin">All Admins</option>
+        <option value="Cashier">All Cashiers</option>
+        <option value="FormMaster">All Form Masters</option>
+        <option value="Teacher">All Teachers</option>
+        <option value="Student">All Students</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <label class="g6-label">Subject <span style="color:var(--danger)">*</span></label>
+      <input type="text" name="subject" class="g6-input"
+             placeholder="e.g. Important notice about end of term" required>
+    </div>
+
+    <div style="margin-bottom:1.25rem;">
+      <label class="g6-label">Message <span style="color:var(--danger)">*</span></label>
+      <textarea name="body" class="g6-input g6-textarea" rows="6"
+                placeholder="Type your message here..." required></textarea>
+    </div>
+
+    <button type="submit" class="g6-btn g6-btn-primary g6-btn-block">
+      <i class="fas fa-paper-plane"></i> Send Message
+    </button>
+  </form>
+</div>
+{% endblock %}

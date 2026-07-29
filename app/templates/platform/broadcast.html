@@ -1,0 +1,82 @@
+{% extends 'platform/base_platform.html' %}
+{% block title %}Broadcast — GRPMS{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Communications</div>
+  <h2 class="g6-page-title"><i class="fas fa-bullhorn"></i> Broadcast to All Schools</h2>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem;">
+
+  <!-- Compose -->
+  <div>
+    <div class="g6-card">
+      <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:0.75rem;">
+        New Broadcast <span class="g6-badge g6-badge-info">All SuperAdmins</span>
+      </h3>
+      <p class="g6-text-sm g6-muted" style="margin-bottom:1rem;">
+        This message will be visible to all School SuperAdmins across every school on the platform.
+      </p>
+      <form method="POST" action="{{ url_for('platform.broadcast') }}">
+        <div style="margin-bottom:1rem;">
+          <label class="g6-label" for="subject">Subject <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="subject" name="subject" class="g6-input"
+                 placeholder="e.g. New academic session reminder" required>
+        </div>
+        <div style="margin-bottom:1.25rem;">
+          <label class="g6-label" for="body">Message <span style="color:var(--danger)">*</span></label>
+          <textarea id="body" name="body" class="g6-input g6-textarea" rows="6"
+                    placeholder="Type your message here..." required></textarea>
+        </div>
+        <button type="submit" class="g6-btn g6-btn-primary g6-btn-block">
+          <i class="fas fa-paper-plane"></i> Send Broadcast
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Inbox: messages from SuperAdmins -->
+  <div>
+    <div class="g6-card">
+      <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:0.75rem;">
+        Inbox <span class="g6-badge g6-badge-neutral">Messages from Schools</span>
+      </h3>
+      {% if inbox %}
+      <div style="display:flex; flex-direction:column; gap:0.75rem; max-height:480px; overflow-y:auto;">
+        {% for msg in inbox %}
+        <div style="border:1px solid var(--slate-200); border-radius:var(--radius-sm); padding:0.85rem;
+                    background:{{ 'var(--white)' if msg.is_read else 'var(--blue-50)' }};">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem;">
+            <div>
+              <div style="font-weight:700; font-size:0.88rem;">{{ msg.subject }}</div>
+              <div class="g6-text-sm g6-muted" style="margin-top:2px;">
+                From school · {{ msg.created_at.strftime('%d %b %Y, %H:%M') }}
+              </div>
+            </div>
+            {% if not msg.is_read %}
+            <span class="g6-badge g6-badge-info" style="white-space:nowrap;">New</span>
+            {% endif %}
+          </div>
+          <p style="font-size:0.85rem; margin-top:0.5rem; color:var(--slate-700);">{{ msg.body }}</p>
+          {% if not msg.is_read %}
+          <form action="{{ url_for('platform.mark_broadcast_read', notif_id=msg.id) }}" method="POST" style="margin-top:0.5rem;">
+            <button type="submit" style="background:none; border:none; color:var(--info); font-size:0.78rem; cursor:pointer; padding:0; font-weight:600;">
+              Mark as read
+            </button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="g6-empty">
+        <i class="fas fa-inbox"></i>
+        <p>No messages from schools yet.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,164 @@
+{% extends 'teacher/base_teacher.html' %}
+{% block title %}Score Entry — {{ allocation.subject.subject_name }}{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">{{ allocation.assigned_class.class_name }}</div>
+  <h2 class="g6-page-title">
+    <i class="fas fa-pen-to-square"></i>
+    {{ allocation.subject.subject_name }}
+    <span class="g6-badge g6-badge-neutral" style="font-family:monospace;">
+      {{ allocation.subject.subject_code }}
+    </span>
+  </h2>
+</div>
+
+{% if active_session and active_term %}
+<div class="g6-flash g6-flash-info" style="margin-bottom:1rem;">
+  <i class="fas fa-calendar-check"></i>
+  <span>
+    Entering scores for <strong>{{ active_term.term_name }}</strong>,
+    {{ active_session.session_name }}
+  </span>
+</div>
+{% endif %}
+
+<div class="g6-card" style="padding:0; overflow:hidden;">
+  <form method="POST" action="{{ url_for('teacher.enter_scores', allocation_id=allocation.id) }}">
+
+    <!-- Desktop table -->
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; min-width:700px;">
+        <thead>
+          <tr style="background:var(--slate-50); border-bottom:2px solid var(--slate-200);">
+            <th style="padding:0.85rem 1rem; text-align:left; font-size:0.72rem;
+                       text-transform:uppercase; color:var(--slate-500); font-weight:700;">
+              Student
+            </th>
+            <th style="padding:0.85rem 0.5rem; text-align:center; font-size:0.72rem;
+                       text-transform:uppercase; color:var(--slate-500); font-weight:700;">
+              CA 1<br><span style="font-size:0.65rem; font-weight:500;">/10</span>
+            </th>
+            <th style="padding:0.85rem 0.5rem; text-align:center; font-size:0.72rem;
+                       text-transform:uppercase; color:var(--slate-500); font-weight:700;">
+              CA 2<br><span style="font-size:0.65rem; font-weight:500;">/10</span>
+            </th>
+            <th style="padding:0.85rem 0.5rem; text-align:center; font-size:0.72rem;
+                       text-transform:uppercase; color:var(--slate-500); font-weight:700;">
+              Ass 1<br><span style="font-size:0.65rem; font-weight:500;">/10</span>
+            </th>
+            <th style="padding:0.85rem 0.5rem; text-align:center; font-size:0.72rem;
+                       text-transform:uppercase; color:var(--slate-500); font-weight:700;">
+              Ass 2<br><span style="font-size:0.65rem; font-weight:500;">/10</span>
+            </th>
+            <th style="padding:0.85rem 0.5rem; text-align:center; font-size:0.72rem;
+                       text-transform:uppercase; color:var(--slate-500); font-weight:700;">
+              Exam<br><span style="font-size:0.65rem; font-weight:500;">/60</span>
+            </th>
+            <th style="padding:0.85rem 0.5rem; text-align:center; font-size:0.72rem;
+                       text-transform:uppercase; color:var(--slate-500); font-weight:700;">
+              Total
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+          {% set sc = score_map.get(student.id) %}
+          <tr style="border-bottom:1px solid var(--slate-100);" class="score-row">
+            <td style="padding:0.65rem 1rem;">
+              <div style="font-weight:700; font-size:0.88rem; color:var(--slate-900);">
+                {{ student.last_name }}, {{ student.first_name }}
+              </div>
+              <div class="g6-text-sm g6-muted">{{ student.admission_number }}</div>
+            </td>
+            {% set fields = [
+              ('ca1',  'ca_1',     10, sc.ca_1     if sc else ''),
+              ('ca2',  'ca_2',     10, sc.ca_2     if sc else ''),
+              ('ass1', 'assign_1', 10, sc.assign_1 if sc else ''),
+              ('ass2', 'assign_2', 10, sc.assign_2 if sc else ''),
+              ('exam', 'exam',     60, sc.exam      if sc else ''),
+            ] %}
+            {% for fname, _, maxval, val in fields %}
+            <td style="padding:0.65rem 0.4rem; text-align:center;">
+              <input type="number" name="{{ fname }}_{{ student.id }}"
+                     class="score-input"
+                     data-student="{{ student.id }}"
+                     min="0" max="{{ maxval }}" step="0.5"
+                     value="{{ val if val != '' else '' }}"
+                     style="width:62px; text-align:center; border:1.5px solid var(--slate-200);
+                            border-radius:6px; padding:0.4rem 0.3rem; font-weight:600;
+                            font-size:0.88rem; background:var(--slate-50);">
+            </td>
+            {% endfor %}
+            <td style="padding:0.65rem 0.5rem; text-align:center;">
+              <span id="total_{{ student.id }}"
+                    class="total-badge"
+                    style="font-family:monospace; font-size:0.95rem; font-weight:800;
+                           padding:0.3rem 0.6rem; border-radius:6px;
+                           background:var(--slate-100); color:var(--slate-700);">
+                {{ sc.total_score if sc else '0.0' }}
+              </span>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align:center; padding:2rem; color:var(--slate-400);">
+              No active students in this class.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div style="padding:1rem 1.25rem; background:var(--slate-50); border-top:1px solid var(--slate-200);
+                display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+      <span class="g6-text-sm g6-muted">
+        <i class="fas fa-info-circle"></i>
+        Scores are clamped to their maximum automatically. Blank fields save as 0.
+      </span>
+      <button type="submit" class="g6-btn g6-btn-primary">
+        <i class="fas fa-save"></i> Save All Scores
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const inputs = document.querySelectorAll('.score-input');
+
+  function updateTotal(studentId) {
+    let total = 0;
+    document.querySelectorAll(`.score-input[data-student="${studentId}"]`)
+      .forEach(inp => { total += parseFloat(inp.value) || 0; });
+
+    const badge = document.getElementById(`total_${studentId}`);
+    badge.textContent = total.toFixed(1);
+
+    if (total >= 50) {
+      badge.style.background = '#dcfce7'; badge.style.color = '#15803d';
+    } else if (total >= 40) {
+      badge.style.background = '#fef3c7'; badge.style.color = '#b45309';
+    } else {
+      badge.style.background = '#fee2e2'; badge.style.color = '#b91c1c';
+    }
+  }
+
+  inputs.forEach(inp => {
+    // Enforce max on blur
+    inp.addEventListener('blur', function () {
+      const max = parseFloat(this.max);
+      if (parseFloat(this.value) > max) this.value = max;
+      if (parseFloat(this.value) < 0)   this.value = 0;
+      updateTotal(this.dataset.student);
+    });
+    inp.addEventListener('input', function () {
+      updateTotal(this.dataset.student);
+    });
+    // Initialise totals on page load
+    updateTotal(inp.dataset.student);
+  });
+});
+</script>
+{% endblock %}

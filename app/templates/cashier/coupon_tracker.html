@@ -1,0 +1,128 @@
+{% extends 'cashier/base_cashier.html' %}
+{% block title %}Coupon Tracker — Cashier{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Fee Compliance</div>
+  <h2 class="g6-page-title"><i class="fas fa-users-viewfinder"></i> Coupon Tracker</h2>
+</div>
+
+{% if active_term %}
+<div class="g6-flash g6-flash-info" style="margin-bottom:1rem;">
+  <i class="fas fa-calendar-check"></i>
+  <span>Showing activation status for <strong>{{ active_term.term_name }}</strong>
+  {% if active_session %}— {{ active_session.session_name }}{% endif %}</span>
+</div>
+{% else %}
+<div class="g6-flash g6-flash-warning" style="margin-bottom:1rem;">
+  <i class="fas fa-exclamation-triangle"></i>
+  <span>No active term configured. Ask your SuperAdmin to set up Academic Setup.</span>
+</div>
+{% endif %}
+
+<!-- Class selector -->
+<div class="g6-card" style="margin-bottom:1rem;">
+  <form method="GET" action="{{ url_for('cashier.coupon_tracker') }}"
+        style="display:flex; gap:0.75rem; align-items:flex-end; flex-wrap:wrap;">
+    <div style="flex:2; min-width:180px;">
+      <label class="g6-label">Select Class</label>
+      <select name="class_id" class="g6-select" onchange="this.form.submit()">
+        <option value="" disabled {{ 'selected' if not sel_class_id }}>Choose a class...</option>
+        {% for c in classes %}
+        <option value="{{ c.id }}" {{ 'selected' if sel_class_id == c.id }}>
+          {{ c.class_name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="g6-btn g6-btn-primary">
+      <i class="fas fa-filter"></i> Load
+    </button>
+  </form>
+</div>
+
+{% if tracker_data %}
+<!-- Summary counts -->
+{% set activated_count = tracker_data | selectattr('has_activated') | list | length %}
+{% set not_activated   = tracker_data | length - activated_count %}
+<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.75rem; margin-bottom:1rem;">
+  <div class="g6-card" style="text-align:center; padding:0.85rem;">
+    <div style="font-size:1.5rem; font-weight:800; color:var(--slate-900);">{{ tracker_data|length }}</div>
+    <div style="font-size:0.7rem; text-transform:uppercase; color:var(--slate-500); font-weight:700;">Total Students</div>
+  </div>
+  <div class="g6-card" style="text-align:center; padding:0.85rem;">
+    <div style="font-size:1.5rem; font-weight:800; color:var(--success);">{{ activated_count }}</div>
+    <div style="font-size:0.7rem; text-transform:uppercase; color:var(--slate-500); font-weight:700;">Fee Paid (Activated)</div>
+  </div>
+  <div class="g6-card" style="text-align:center; padding:0.85rem;">
+    <div style="font-size:1.5rem; font-weight:800; color:var(--danger);">{{ not_activated }}</div>
+    <div style="font-size:0.7rem; text-transform:uppercase; color:var(--slate-500); font-weight:700;">Pending / Defaulters</div>
+  </div>
+</div>
+
+<!-- Student tracker table -->
+<div class="g6-card">
+  <div class="g6-table-responsive">
+    <table class="g6-table">
+      <thead>
+        <tr>
+          <th>Adm No.</th>
+          <th>Student Name</th>
+          <th>Fee Status</th>
+          <th>Coupon Used</th>
+          <th>Activated On</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in tracker_data %}
+        <tr style="background:{{ 'var(--white)' if row.has_activated else '#fff8f8' }}">
+          <td data-label="Adm No.">
+            <span style="font-weight:700;">{{ row.student.admission_number }}</span>
+          </td>
+          <td data-label="Student">
+            <span style="font-weight:600;">
+              {{ row.student.last_name }}, {{ row.student.first_name }}
+            </span>
+          </td>
+          <td data-label="Fee Status">
+            {% if row.has_activated %}
+              <span class="g6-badge g6-badge-success">
+                <i class="fas fa-check-circle"></i> Paid
+              </span>
+            {% else %}
+              <span class="g6-badge g6-badge-danger">
+                <i class="fas fa-times-circle"></i> Pending
+              </span>
+            {% endif %}
+          </td>
+          <td data-label="Coupon Used">
+            {% if row.coupon_code %}
+              <code style="font-size:0.85rem; font-weight:700; letter-spacing:0.06em;
+                           background:var(--slate-100); padding:1px 7px; border-radius:4px;">
+                {{ row.coupon_code }}
+              </code>
+            {% else %}
+              <span class="g6-muted">—</span>
+            {% endif %}
+          </td>
+          <td data-label="Activated On">
+            {% if row.activated_at %}
+              {{ row.activated_at.strftime('%d %b %Y, %H:%M') }}
+            {% else %}
+              <span class="g6-muted">Not yet</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% elif sel_class_id %}
+<div class="g6-flash g6-flash-info">
+  <i class="fas fa-info-circle"></i>
+  <span>No active students found in this class.</span>
+</div>
+{% endif %}
+{% endblock %}

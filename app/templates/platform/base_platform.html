@@ -1,0 +1,61 @@
+{% extends 'shared/base.html' %}
+
+{% block accent_color %}var(--role-platform){% endblock %}
+
+{% block sidebar %}
+<div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em;
+            color:var(--slate-400); padding:0 0.5rem 0.75rem; margin-bottom:0.5rem;
+            border-bottom:1px solid var(--slate-100);">
+  Platform Control
+</div>
+<a href="{{ url_for('platform.dashboard') }}"
+   class="{{ 'active' if request.endpoint == 'platform.dashboard' else '' }}">
+  <i class="fas fa-th-large"></i> Dashboard
+</a>
+<a href="{{ url_for('platform.add_school') }}"
+   class="{{ 'active' if 'school' in request.endpoint else '' }}">
+  <i class="fas fa-school"></i> Manage Schools
+</a>
+<a href="{{ url_for('platform.generate_coupons') }}"
+   class="{{ 'active' if 'coupon' in request.endpoint and 'transcript' not in request.endpoint else '' }}">
+  <i class="fas fa-ticket-alt"></i> Term Coupons
+</a>
+<a href="{{ url_for('platform.transcript_coupons') }}"
+   class="{{ 'active' if 'transcript' in request.endpoint else '' }}">
+  <i class="fas fa-file-contract"></i> Transcript Coupons
+</a>
+<a href="{{ url_for('platform.broadcast') }}"
+   class="{{ 'active' if request.endpoint == 'platform.broadcast' else '' }}">
+  <i class="fas fa-bullhorn"></i> Broadcast
+</a>
+<div style="margin-top:auto; padding-top:1rem; border-top:1px solid var(--slate-100);">
+  <a href="{{ url_for('auth.change_password') }}"><i class="fas fa-key"></i> Change Password</a>
+  <a href="{{ url_for('auth.logout') }}" style="color:var(--danger)"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
+{% endblock %}
+
+{% block bottom_nav %}
+<a href="{{ url_for('platform.dashboard') }}"
+   class="{{ 'active' if request.endpoint == 'platform.dashboard' else '' }}">
+  <i class="fas fa-th-large"></i><span>Dashboard</span>
+</a>
+<a href="{{ url_for('platform.add_school') }}"
+   class="{{ 'active' if 'school' in request.endpoint else '' }}">
+  <i class="fas fa-school"></i><span>Schools</span>
+</a>
+<a href="{{ url_for('platform.generate_coupons') }}"
+   class="{{ 'active' if 'coupon_list' in request.endpoint or 'generate' in request.endpoint else '' }}">
+  <i class="fas fa-ticket-alt"></i><span>Coupons</span>
+</a>
+<a href="{{ url_for('platform.transcript_coupons') }}"
+   class="{{ 'active' if 'transcript' in request.endpoint else '' }}">
+  <i class="fas fa-file-contract"></i><span>Transcripts</span>
+</a>
+<a href="{{ url_for('platform.broadcast') }}"
+   class="{{ 'active' if request.endpoint == 'platform.broadcast' else '' }}">
+  <i class="fas fa-bullhorn"></i><span>Broadcast</span>
+</a>
+<a href="{{ url_for('auth.logout') }}">
+  <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+</a>
+{% endblock %}

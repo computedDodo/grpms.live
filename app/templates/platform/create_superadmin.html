@@ -1,0 +1,45 @@
+{% extends 'platform/base_platform.html' %}
+{% block title %}Create SuperAdmin — {{ school.name }}{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">{{ school.name }}</div>
+  <h2 class="g6-page-title"><i class="fas fa-user-shield"></i> Create SuperAdmin</h2>
+</div>
+
+{% if existing %}
+<div class="g6-flash g6-flash-warning">
+  <i class="fas fa-exclamation-triangle"></i>
+  <span>This school already has a SuperAdmin: <strong>{{ existing.username }}</strong>.
+  Creating a new one will add a second account. Both will have full SuperAdmin access.</span>
+</div>
+{% endif %}
+
+<div class="g6-card" style="max-width:480px;">
+  <p class="g6-muted g6-text-sm" style="margin-bottom:1.25rem;">
+    The SuperAdmin is the school's primary manager. They can create and manage all staff accounts,
+    classes, subjects, sessions, and school settings.
+  </p>
+  <form method="POST" action="{{ url_for('platform.create_superadmin', school_id=school.id) }}">
+    <div style="margin-bottom:1rem;">
+      <label class="g6-label" for="username">Login Username <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="username" name="username" class="g6-input"
+             placeholder="e.g. admin_greenfield" required autofocus autocomplete="off">
+    </div>
+    <div style="margin-bottom:1.5rem;">
+      <label class="g6-label" for="password">Initial Password <span style="color:var(--danger)">*</span></label>
+      <input type="password" id="password" name="password" class="g6-input"
+             placeholder="Minimum 8 characters" required minlength="8" autocomplete="new-password">
+      <span class="g6-text-sm g6-muted" style="margin-top:4px; display:block;">
+        The SuperAdmin should change this on first login.
+      </span>
+    </div>
+    <div style="display:flex; gap:0.75rem;">
+      <button type="submit" class="g6-btn g6-btn-primary" style="flex:1;">
+        <i class="fas fa-user-plus"></i> Create SuperAdmin Account
+      </button>
+      <a href="{{ url_for('platform.dashboard') }}" class="g6-btn g6-btn-outline">Skip</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,196 @@
+{% extends 'cashier/base_cashier.html' %}
+{% block title %}Result Release — Cashier{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Result Management</div>
+  <h2 class="g6-page-title"><i class="fas fa-unlock-alt"></i> Result Release Control</h2>
+</div>
+
+<!-- Filter selector -->
+<div class="g6-card" style="margin-bottom:1rem;">
+  <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:0.75rem;">
+    Select Session, Term &amp; Class
+  </h3>
+  <form method="GET" action="{{ url_for('cashier.result_release') }}"
+        style="display:flex; flex-wrap:wrap; gap:0.75rem; align-items:flex-end;" id="filterForm">
+
+    <div style="flex:2; min-width:150px;">
+      <label class="g6-label">Session</label>
+      <select name="session_id" class="g6-select" id="sessionSel" onchange="filterTerms()">
+        <option value="" disabled {{ 'selected' if not sel_session_id }}>Select session...</option>
+        {% for s in sessions %}
+        <option value="{{ s.id }}" {{ 'selected' if sel_session_id == s.id }}>
+          {{ s.session_name }}{% if s.is_active %} (Active){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="flex:2; min-width:150px;">
+      <label class="g6-label">Term</label>
+      <select name="term_id" class="g6-select" id="termSel">
+        <option value="" disabled {{ 'selected' if not sel_term_id }}>Select term...</option>
+        {% for t in terms_for_session %}
+        <option value="{{ t.id }}"
+                data-session="{{ t.session_id }}"
+                {{ 'selected' if sel_term_id == t.id }}>
+          {{ t.term_name }}{% if active_term and t.id == active_term.id %} (Active){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="flex:2; min-width:150px;">
+      <label class="g6-label">Class</label>
+      <select name="class_id" class="g6-select">
+        <option value="" disabled {{ 'selected' if not sel_class_id }}>Select class...</option>
+        {% for c in classes %}
+        <option value="{{ c.id }}" {{ 'selected' if sel_class_id == c.id }}>
+          {{ c.class_name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button type="submit" class="g6-btn g6-btn-primary">
+      <i class="fas fa-search"></i> Load
+    </button>
+  </form>
+</div>
+
+{% if students_data %}
+<!-- Bulk actions -->
+<div class="g6-card" style="margin-bottom:1rem;">
+  <div style="display:flex; justify-content:space-between; align-items:center;
+              flex-wrap:wrap; gap:0.75rem;">
+    <div>
+      <div style="font-weight:700; font-size:0.92rem;">Bulk Actions</div>
+      <div class="g6-text-sm g6-muted">Apply to all students in this class at once</div>
+    </div>
+    <div style="display:flex; gap:0.75rem;">
+      <form action="{{ url_for('cashier.toggle_release') }}" method="POST" style="margin:0;"
+            onsubmit="return confirm('Withhold ALL results for this class?')">
+        <input type="hidden" name="action"     value="hold_all">
+        <input type="hidden" name="session_id" value="{{ sel_session_id }}">
+        <input type="hidden" name="term_id"    value="{{ sel_term_id }}">
+        <input type="hidden" name="class_id"   value="{{ sel_class_id }}">
+        <button type="submit" class="g6-btn g6-btn-outline"
+                style="color:var(--warning); border-color:var(--warning);">
+          <i class="fas fa-lock"></i> Hold All
+        </button>
+      </form>
+      <form action="{{ url_for('cashier.toggle_release') }}" method="POST" style="margin:0;"
+            onsubmit="return confirm('Publish ALL results for this class? Students can view them immediately.')">
+        <input type="hidden" name="action"     value="release_all">
+        <input type="hidden" name="session_id" value="{{ sel_session_id }}">
+        <input type="hidden" name="term_id"    value="{{ sel_term_id }}">
+        <input type="hidden" name="class_id"   value="{{ sel_class_id }}">
+        <button type="submit" class="g6-btn g6-btn-primary">
+          <i class="fas fa-globe"></i> Publish All
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Per-student table -->
+<div class="g6-card">
+  <div class="g6-table-responsive">
+    <table class="g6-table">
+      <thead>
+        <tr>
+          <th>Adm No.</th>
+          <th>Student Name</th>
+          <th>Score Data</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in students_data %}
+        <tr>
+          <td data-label="Adm No.">
+            <span style="font-weight:700; color:var(--accent);">
+              {{ row.student.admission_number }}
+            </span>
+          </td>
+          <td data-label="Student">
+            <span style="font-weight:700;">
+              {{ row.student.last_name }}, {{ row.student.first_name }}
+            </span>
+          </td>
+          <td data-label="Score Data">
+            {% if row.has_scores %}
+              <span class="g6-badge g6-badge-success">
+                <i class="fas fa-check-circle"></i> Scores recorded
+              </span>
+            {% else %}
+              <span class="g6-badge g6-badge-warning">
+                <i class="fas fa-exclamation-circle"></i> No scores yet
+              </span>
+            {% endif %}
+          </td>
+          <td data-label="Status">
+            {% if row.is_released %}
+              <span class="g6-badge g6-badge-success">
+                <i class="fas fa-globe"></i> Published
+              </span>
+            {% else %}
+              <span class="g6-badge g6-badge-warning">
+                <i class="fas fa-lock"></i> Withheld
+              </span>
+            {% endif %}
+          </td>
+          <td data-label="Action">
+            <form action="{{ url_for('cashier.toggle_release') }}" method="POST" style="margin:0;">
+              <input type="hidden" name="action"         value="toggle_single">
+              <input type="hidden" name="student_id"     value="{{ row.student.id }}">
+              <input type="hidden" name="current_status" value="{{ row.is_released }}">
+              <input type="hidden" name="session_id"     value="{{ sel_session_id }}">
+              <input type="hidden" name="term_id"        value="{{ sel_term_id }}">
+              <input type="hidden" name="class_id"       value="{{ sel_class_id }}">
+              {% if row.is_released %}
+              <button type="submit" class="g6-btn g6-btn-outline"
+                      style="font-size:0.78rem; padding:0.4rem 0.8rem; color:var(--warning);">
+                <i class="fas fa-lock"></i> Hold
+              </button>
+              {% else %}
+              <button type="submit" class="g6-btn g6-btn-outline"
+                      style="font-size:0.78rem; padding:0.4rem 0.8rem; color:var(--success);"
+                      {{ 'disabled' if not row.has_scores }}>
+                <i class="fas fa-globe"></i> Release
+              </button>
+              {% endif %}
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% elif sel_session_id and sel_term_id and sel_class_id %}
+<div class="g6-flash g6-flash-info">
+  <i class="fas fa-info-circle"></i>
+  <span>No active students found in this class for the selected criteria.</span>
+</div>
+{% endif %}
+
+<script>
+// Cascade session → terms dropdown
+const allTermOptions = Array.from(
+  document.querySelectorAll('#termSel option[data-session]')
+);
+
+function filterTerms() {
+  const sessionId = document.getElementById('sessionSel').value;
+  const termSel   = document.getElementById('termSel');
+  termSel.innerHTML = '<option value="" disabled selected>Select term...</option>';
+  allTermOptions
+    .filter(o => o.dataset.session === sessionId)
+    .forEach(o => termSel.appendChild(o.cloneNode(true)));
+}
+</script>
+{% endblock %}

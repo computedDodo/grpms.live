@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transcript — {{ student.last_name }}, {{ student.first_name }}</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Plus Jakarta Sans',sans-serif; background:#fff; color:#0f172a; }
+  .no-print { display:flex; justify-content:space-between; align-items:center;
+              padding:0.85rem 1.5rem; border-bottom:1px solid #e2e8f0; flex-wrap:wrap; gap:0.75rem; }
+  .btn { display:inline-flex; align-items:center; gap:0.4rem; padding:0.55rem 1.1rem;
+         border-radius:8px; font-weight:700; font-size:0.85rem; text-decoration:none;
+         border:none; cursor:pointer; font-family:inherit; }
+  .btn-dark    { background:#0f172a; color:#fff; }
+  .btn-outline { background:transparent; border:1.5px solid #e2e8f0; color:#334155; }
+  .gate-box { max-width:480px; margin:3rem auto; padding:2rem; border:1.5px solid #e2e8f0;
+              border-radius:12px; text-align:center; }
+  .gate-title { font-family:'Lora',serif; font-size:1.25rem; font-weight:700;
+                margin-bottom:0.5rem; }
+  .gate-sub   { font-size:0.88rem; color:#64748b; margin-bottom:1.5rem; line-height:1.6; }
+  .code-input { width:100%; padding:0.85rem 1rem; border:1.5px solid #e2e8f0; border-radius:8px;
+                font-family:monospace; font-size:1.1rem; letter-spacing:0.12em;
+                text-transform:uppercase; text-align:center; margin-bottom:0.85rem; }
+  .tx-wrap { max-width:900px; margin:0 auto; padding:2rem 1.5rem 3rem; }
+  .tx-header { text-align:center; border-bottom:4px solid #0f172a; padding-bottom:1rem;
+               margin-bottom:1.5rem; position:relative; }
+  .tx-header img.logo { height:75px; position:absolute; left:0; top:0; }
+  .school-name { font-family:'Lora',serif; font-size:2rem; font-weight:700;
+                  text-transform:uppercase; letter-spacing:1px; }
+  .tx-label { font-size:1rem; font-weight:700; letter-spacing:3px; color:#475569; margin-top:6px; }
+  .student-box { display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;
+                  border:2px solid #cbd5e1; padding:1rem 1.25rem; margin-bottom:1.5rem;
+                  background:#f8fafc; font-size:0.9rem; }
+  .session-block { margin-bottom:2.5rem; page-break-inside:avoid; }
+  .session-title { background:#0f172a; color:#fff; padding:0.5rem 1rem;
+                    font-weight:700; font-size:1rem; margin-bottom:0.85rem; }
+  .term-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  .term-block { margin-bottom:1rem; }
+  .term-title { font-weight:700; color:#1e293b; border-bottom:2px solid #cbd5e1;
+                 margin-bottom:0.5rem; display:flex; justify-content:space-between;
+                 font-size:0.9rem; }
+  .t-table { width:100%; border-collapse:collapse; }
+  .t-table th, .t-table td { border:1px solid #94a3b8; padding:0.45rem 0.5rem;
+                               text-align:center; font-size:0.82rem; }
+  .t-table th { background:#e2e8f0; font-weight:700; }
+  .t-table td.subj { text-align:left; font-weight:600; }
+  .sig-area { display:flex; justify-content:space-between; margin-top:3rem;
+               flex-wrap:wrap; gap:2rem; page-break-inside:avoid; }
+  .sig-block { width:230px; text-align:center; }
+  .sig-line { border-top:1px solid #000; padding-top:5px; font-weight:700; font-size:0.85rem; }
+  @media print {
+    @page { size:A4 portrait; margin:10mm; }
+    .no-print { display:none !important; }
+    .gate-box { display:none !important; }
+    body { font-size:10px; }
+    .tx-wrap { padding:0; max-width:100%; }
+    .school-name { font-size:1.5rem; }
+    .t-table th, .t-table td { padding:0.2rem 0.3rem; font-size:0.72rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="no-print">
+  <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline">← Back</a>
+  {% if coupon_verified %}
+  <button onclick="window.print()" class="btn btn-dark">
+    <i class="fas fa-print"></i> Print / Download Transcript
+  </button>
+  {% endif %}
+</div>
+
+{% if not coupon_verified %}
+<!-- Coupon gate -->
+<div class="gate-box">
+  <div style="font-size:2rem; margin-bottom:0.75rem;">📜</div>
+  <div class="gate-title">Transcript Access</div>
+  <div class="gate-sub">
+    Your transcript requires a special coupon code assigned by your school.
+    Enter it below to unlock your full academic history.
+  </div>
+  {% if not student.transcript_coupon %}
+  <div style="font-size:0.88rem; color:#d97706; font-weight:600; background:#fffbeb;
+              padding:0.75rem 1rem; border-radius:8px; border:1px solid #fde68a;">
+    <i class="fas fa-exclamation-triangle"></i>
+    Your transcript coupon has not been assigned yet. Contact your school administrator.
+  </div>
+  {% else %}
+  <form method="POST" action="{{ url_for('student.verify_transcript_coupon') }}">
+    <input type="text" name="coupon_code" class="code-input"
+           placeholder="Enter transcript coupon..." required maxlength="20" autofocus
+           autocomplete="off">
+    <button type="submit" class="btn btn-dark" style="width:100%; justify-content:center;">
+      <i class="fas fa-unlock-alt"></i> Unlock Transcript
+    </button>
+  </form>
+  {% endif %}
+</div>
+
+{% else %}
+<!-- Full transcript (coupon verified) -->
+<div class="tx-wrap">
+  <div class="tx-header">
+    {% if school and school.logo_path %}
+    <img class="logo" src="{{ url_for('static', filename=school.logo_path) }}" alt="Logo">
+    {% endif %}
+    <div class="school-name">{{ school.name if school else 'School' }}</div>
+    <div class="tx-label">Official Cumulative Transcript</div>
+  </div>
+
+  <div class="student-box">
+    <div><strong>Student Name:</strong>
+      <span style="text-transform:uppercase;">
+        {{ student.last_name }}, {{ student.first_name }}
+      </span>
+    </div>
+    <div><strong>Admission No:</strong> {{ student.admission_number }}</div>
+    <div><strong>Current Class:</strong>
+      {{ student.student_class.class_name if student.student_class else 'Graduated / Archived' }}
+    </div>
+    <div><strong>Date Generated:</strong>
+      <span id="printDate"></span>
+    </div>
+  </div>
+
+  {% if transcript_data %}
+    {% for session_name, terms in transcript_data.items() %}
+    <div class="session-block">
+      <div class="session-title">Academic Session: {{ session_name }}</div>
+      <div class="term-row">
+        {% for term_name, data in terms.items() %}
+        <div class="term-block">
+          <div class="term-title">
+            <span>{{ term_name }}</span>
+            <span>Avg: {{ data.average }}%</span>
+          </div>
+          <table class="t-table">
+            <thead>
+              <tr>
+                <th class="subj" style="text-align:left;">Subject</th>
+                <th>Total /100</th>
+                <th>Grade</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for score in data.scores %}
+              <tr>
+                <td class="subj">{{ score.subject.subject_name }}</td>
+                <td>{{ score.total_score }}</td>
+                <td><strong>{{ score.grade }}</strong></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div style="text-align:right; font-size:0.78rem; color:#475569; margin-top:4px;">
+            Credits: {{ data.subject_count }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div style="text-align:center; padding:3rem; color:#94a3b8;">
+    No academic records found.
+  </div>
+  {% endif %}
+
+  <div class="sig-area">
+    <div class="sig-block">
+      <div style="height:60px; position:relative;">
+        {% if school and school.stamp_path %}
+        <img src="{{ url_for('static', filename=school.stamp_path) }}"
+             style="height:65px; position:absolute; bottom:0; left:50%;
+                    transform:translateX(-50%); opacity:0.85;" alt="Stamp">
+        {% endif %}
+      </div>
+      <div class="sig-line">Registrar / Official Stamp</div>
+    </div>
+    <div class="sig-block">
+      <div style="height:60px; position:relative;">
+        {% if school and school.signature_path %}
+        <img src="{{ url_for('static', filename=school.signature_path) }}"
+             style="height:55px; position:absolute; bottom:-5px; left:50%;
+                    transform:translateX(-50%); z-index:2;" alt="Signature">
+        {% endif %}
+      </div>
+      <div class="sig-line">{{ school.principal_name if school else 'Principal' }}</div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<script>
+  const el = document.getElementById('printDate');
+  if (el) el.textContent = new Date().toLocaleDateString('en-GB', {
+    day:'2-digit', month:'short', year:'numeric'
+  });
+</script>
+</body>
+</html>

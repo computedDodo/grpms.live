@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transcript — {{ student.last_name }}, {{ student.first_name }}</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap">
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Plus Jakarta Sans',sans-serif; background:#f8fafc; color:#0f172a; }
+  .tx-wrap { background:#fff; max-width:960px; margin:1rem auto; padding:2.5rem; box-shadow:0 4px 20px rgba(0,0,0,0.08); border-radius:8px; }
+  .tx-header { text-align:center; border-bottom:5px solid #0f172a; padding-bottom:1rem; margin-bottom:1.5rem; position:relative; }
+  .tx-header img.logo { height:75px; position:absolute; left:0; top:0; }
+  .tx-school { font-family:'Lora',serif; font-size:2.25rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; }
+  .tx-label { font-size:1rem; font-weight:700; letter-spacing:3px; color:#475569; margin-top:8px; }
+  .tx-info { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; border:2px solid #cbd5e1; padding:1.25rem; border-radius:6px; margin-bottom:1.5rem; background:#f8fafc; }
+  .session-block { margin-bottom:2rem; page-break-inside:avoid; }
+  .session-title { background:#0f172a; color:#fff; padding:0.45rem 1rem; font-weight:700; font-size:0.95rem; border-radius:6px 6px 0 0; }
+  .terms-row { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; padding:0.75rem 0; }
+  .term-block { }
+  .term-title { font-weight:700; font-size:0.82rem; border-bottom:2px solid #cbd5e1; margin-bottom:0.5rem; padding-bottom:4px; display:flex; justify-content:space-between; }
+  table.t-scores { width:100%; border-collapse:collapse; }
+  table.t-scores th, table.t-scores td { border:1px solid #94a3b8; padding:4px 6px; text-align:center; font-size:0.75rem; }
+  table.t-scores th { background:#e2e8f0; font-weight:700; }
+  table.t-scores td.subj { text-align:left; font-weight:600; }
+  .term-summary { font-size:0.75rem; font-weight:700; text-align:right; margin-top:4px; color:#0f172a; }
+  .sig-area { display:flex; justify-content:space-between; align-items:flex-end; margin-top:3rem; }
+  .sig-block { width:240px; text-align:center; }
+  .sig-img-wrap { height:70px; position:relative; margin-bottom:4px; }
+  .sig-img-wrap img { position:absolute; bottom:0; left:50%; transform:translateX(-50%); }
+  .sig-line { border-top:1px solid #000; padding-top:5px; font-weight:700; font-size:0.82rem; }
+  .no-print { text-align:right; padding:1rem; }
+  @media print {
+    @page { size:A4 portrait; margin:10mm; }
+    body { background:#fff; }
+    .no-print, nav { display:none !important; }
+    .tx-wrap { box-shadow:none; margin:0; padding:0; border-radius:0; max-width:100%; }
+    .session-block { page-break-inside:avoid; }
+    .terms-row { gap:0.5rem; }
+    table.t-scores th, table.t-scores td { font-size:0.65rem; padding:2px 4px; }
+  }
+</style>
+</head>
+<body>
+<div class="no-print">
+  <a href="{{ url_for('admin.manage_students') }}"
+     style="margin-right:1rem; color:#334155; text-decoration:none; font-size:0.9rem;">← Back</a>
+
+  {% if student.transcript_coupon %}
+    {% if coupon_verified %}
+    <!-- Coupon already verified this session — show print button -->
+    <button onclick="window.print()"
+            style="background:#0f172a;color:#fff;border:none;padding:0.6rem 1.4rem;
+                   border-radius:8px;font-weight:700;cursor:pointer;font-size:0.9rem;">
+      <i class="fas fa-print"></i> Print / Download Transcript
+    </button>
+    {% else %}
+    <!-- Admin must enter the student's transcript coupon to unlock download -->
+    <span style="display:inline-flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+      <form method="POST" action="{{ url_for('admin.verify_transcript_coupon', student_id=student.id) }}"
+            style="display:inline-flex; align-items:center; gap:0.5rem; margin:0;">
+        <input type="text" name="coupon_code" placeholder="Enter transcript coupon..."
+               style="padding:0.5rem 0.85rem; border:1.5px solid #e2e8f0; border-radius:6px;
+                      font-size:0.88rem; width:220px; font-family:monospace; letter-spacing:0.06em;">
+        <button type="submit"
+                style="background:#0f172a;color:#fff;border:none;padding:0.5rem 1rem;
+                       border-radius:6px;font-weight:700;cursor:pointer;font-size:0.88rem;">
+          Unlock Download
+        </button>
+      </form>
+      <span style="font-size:0.78rem; color:#64748b;">
+        Enter the student's transcript coupon to enable printing.
+      </span>
+    </span>
+    {% endif %}
+  {% else %}
+  <span style="font-size:0.82rem; color:#d97706; font-weight:600; background:#fffbeb;
+               border:1px solid #fde68a; padding:0.4rem 0.9rem; border-radius:6px;">
+    <i class="fas fa-exclamation-triangle"></i>
+    No transcript coupon assigned — contact Platform Admin to generate one.
+  </span>
+  {% endif %}
+</div>
+
+<div class="tx-wrap">
+  <div class="tx-header">
+    {% if school and school.logo_path %}
+    <img class="logo" src="{{ url_for('static', filename=school.logo_path) }}" alt="Logo">
+    {% endif %}
+    <div class="tx-school">{{ school.name if school else 'School' }}</div>
+    <div class="tx-label">OFFICIAL CUMULATIVE TRANSCRIPT</div>
+  </div>
+
+  <div class="tx-info">
+    <div><strong>Student Name:</strong> <span style="text-transform:uppercase;">{{ student.last_name }}, {{ student.first_name }}</span></div>
+    <div><strong>Admission No:</strong> {{ student.admission_number }}</div>
+    <div><strong>Current Class:</strong> {{ student.student_class.class_name if student.student_class else 'Graduated / Archived' }}</div>
+    <div><strong>Date Generated:</strong> <span id="genDate"></span></div>
+  </div>
+
+  {% if transcript_data %}
+    {% for session_name, terms in transcript_data.items() %}
+    <div class="session-block">
+      <div class="session-title">ACADEMIC SESSION: {{ session_name }}</div>
+      <div class="terms-row">
+        {% for term_name, data in terms.items() %}
+        <div class="term-block">
+          <div class="term-title">
+            <span>{{ term_name }}</span>
+            <span style="color:#1d4ed8;">{{ data.average }}%</span>
+          </div>
+          <table class="t-scores">
+            <thead><tr><th class="subj">Subject</th><th>Total</th><th>Grade</th></tr></thead>
+            <tbody>
+              {% for sc in data.scores %}
+              <tr>
+                <td class="subj">{{ sc.subject.subject_name }}</td>
+                <td>{{ sc.total_score }}</td>
+                <td><strong>{{ sc.grade }}</strong></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div class="term-summary">Subjects: {{ data.subject_count }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div style="text-align:center;padding:3rem;color:#94a3b8;">No academic records found.</div>
+  {% endif %}
+
+  <div class="sig-area">
+    <div class="sig-block">
+      <div class="sig-img-wrap">
+        {% if school and school.stamp_path %}
+        <img src="{{ url_for('static', filename=school.stamp_path) }}" style="height:70px;opacity:0.85;" alt="Stamp">
+        {% endif %}
+      </div>
+      <div class="sig-line">Registrar / Official Stamp</div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-img-wrap">
+        {% if school and school.signature_path %}
+        <img src="{{ url_for('static', filename=school.signature_path) }}" style="height:55px;" alt="Signature">
+        {% endif %}
+      </div>
+      <div class="sig-line">{{ school.principal_name if school else 'Principal' }}</div>
+    </div>
+  </div>
+</div>
+<script>document.getElementById('genDate').textContent = new Date().toLocaleDateString('en-GB');</script>
+</body>
+</html>

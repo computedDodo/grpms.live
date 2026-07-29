@@ -1,0 +1,66 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Form Masters — Admin{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Staff & Operations</div>
+  <h2 class="g6-page-title"><i class="fas fa-chalkboard-teacher"></i> Form Master Assignment</h2>
+</div>
+<div style="display:grid;grid-template-columns:320px 1fr;gap:1.25rem;">
+
+  <div class="g6-card">
+    <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:0.85rem;">Assign / Change</h3>
+    <form method="POST" action="{{ url_for('admin.manage_form_masters') }}">
+      <div style="margin-bottom:0.85rem;">
+        <label class="g6-label">Class <span style="color:var(--danger)">*</span></label>
+        <select name="class_id" class="g6-select" required>
+          <option value="" disabled selected>Select class...</option>
+          {% for cls in classes %}
+          <option value="{{ cls.id }}">{{ cls.class_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="margin-bottom:1.25rem;">
+        <label class="g6-label">Form Master <span style="color:var(--danger)">*</span></label>
+        <select name="teacher_id" class="g6-select" required>
+          <option value="" disabled selected>Select staff...</option>
+          <option value="remove" style="color:var(--danger);font-weight:700;">— Remove Current Master —</option>
+          {% for fm in form_masters %}
+          <option value="{{ fm.id }}">{{ fm.full_name }}</option>
+          {% endfor %}
+        </select>
+        <span class="g6-text-sm g6-muted" style="margin-top:4px;display:block;">
+          Only staff with the FormMaster role appear here.
+        </span>
+      </div>
+      <button type="submit" class="g6-btn g6-btn-primary g6-btn-block">
+        <i class="fas fa-save"></i> Save Assignment
+      </button>
+    </form>
+  </div>
+
+  <div class="g6-card">
+    <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:0.85rem;">Current Assignments</h3>
+    <div class="g6-table-responsive">
+      <table class="g6-table">
+        <thead><tr><th>Class</th><th>Form Master</th></tr></thead>
+        <tbody>
+          {% for cls in classes %}
+          <tr>
+            <td data-label="Class" style="font-weight:700;">{{ cls.class_name }}</td>
+            <td data-label="Form Master">
+              {% if cls.form_master %}
+              <span class="g6-badge g6-badge-success"><i class="fas fa-user-check"></i> {{ cls.form_master.full_name }}</span>
+              {% else %}
+              <span class="g6-muted fst-italic g6-text-sm">Unassigned</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

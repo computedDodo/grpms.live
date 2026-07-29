@@ -1,0 +1,142 @@
+{% extends 'cashier/base_cashier.html' %}
+{% block title %}Cashier Dashboard{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Cashier Portal</div>
+  <h2 class="g6-page-title"><i class="fas fa-cash-register"></i> Dashboard</h2>
+</div>
+
+{% if active_session and active_term %}
+<div class="g6-flash g6-flash-success" style="margin-bottom:1.25rem;">
+  <i class="fas fa-calendar-check"></i>
+  <span>Active: <strong>{{ active_term.term_name }}</strong> — {{ active_session.session_name }}</span>
+</div>
+{% else %}
+<div class="g6-flash g6-flash-warning" style="margin-bottom:1.25rem;">
+  <i class="fas fa-exclamation-triangle"></i>
+  <span>No active session or term is set. Ask your SuperAdmin to configure Academic Setup.</span>
+</div>
+{% endif %}
+
+<!-- Coupon summary -->
+<div style="margin-bottom:1rem;">
+  <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em;
+              color:var(--slate-500); margin-bottom:0.6rem;">
+    Coupon Status — {{ active_term.term_name if active_term else 'No active term' }}
+  </div>
+  <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.75rem;">
+    <div class="g6-card" style="text-align:center; padding:1rem;">
+      <div style="font-size:1.75rem; font-weight:800; color:var(--slate-900); line-height:1;">
+        {{ coupon_total }}
+      </div>
+      <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase;
+                  color:var(--slate-500); margin-top:4px;">Generated</div>
+    </div>
+    <div class="g6-card" style="text-align:center; padding:1rem;">
+      <div style="font-size:1.75rem; font-weight:800; color:var(--success); line-height:1;">
+        {{ coupon_unused }}
+      </div>
+      <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase;
+                  color:var(--slate-500); margin-top:4px;">Unused</div>
+    </div>
+    <div class="g6-card" style="text-align:center; padding:1rem;">
+      <div style="font-size:1.75rem; font-weight:800; color:var(--accent); line-height:1;">
+        {{ coupon_used }}
+      </div>
+      <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase;
+                  color:var(--slate-500); margin-top:4px;">Used</div>
+    </div>
+  </div>
+</div>
+
+<!-- Result release summary -->
+<div style="margin-bottom:1.25rem;">
+  <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em;
+              color:var(--slate-500); margin-bottom:0.6rem;">
+    Result Release Status
+  </div>
+  <div class="g6-card" style="display:flex; align-items:center; justify-content:space-between;
+                               flex-wrap:wrap; gap:1rem; padding:1rem 1.25rem;">
+    <div>
+      <div style="font-size:1.5rem; font-weight:800; color:var(--slate-900);">
+        {{ released_students }}
+        <span style="font-size:1rem; font-weight:500; color:var(--slate-500);">
+          / {{ total_students }} students
+        </span>
+      </div>
+      <div style="font-size:0.78rem; color:var(--slate-500); margin-top:2px;">
+        have published results this term
+      </div>
+    </div>
+    <a href="{{ url_for('cashier.result_release') }}" class="g6-btn g6-btn-primary">
+      <i class="fas fa-unlock-alt"></i> Manage Releases
+    </a>
+  </div>
+</div>
+
+<!-- Quick actions -->
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+  <a href="{{ url_for('cashier.coupon_list') }}" class="g6-card"
+     style="text-decoration:none; display:flex; align-items:center; gap:0.75rem; padding:1rem;">
+    <div style="width:40px; height:40px; border-radius:var(--radius-sm);
+                background:color-mix(in srgb,var(--accent) 12%,white);
+                color:var(--accent); display:flex; align-items:center;
+                justify-content:center; font-size:1.1rem; flex-shrink:0;">
+      <i class="fas fa-ticket-alt"></i>
+    </div>
+    <div>
+      <div style="font-weight:700; font-size:0.88rem; color:var(--slate-900);">View Coupons</div>
+      <div class="g6-text-sm g6-muted">Filter &amp; print unused codes</div>
+    </div>
+  </a>
+
+  <a href="{{ url_for('cashier.coupon_tracker') }}" class="g6-card"
+     style="text-decoration:none; display:flex; align-items:center; gap:0.75rem; padding:1rem;">
+    <div style="width:40px; height:40px; border-radius:var(--radius-sm);
+                background:color-mix(in srgb,var(--warning) 12%,white);
+                color:var(--warning); display:flex; align-items:center;
+                justify-content:center; font-size:1.1rem; flex-shrink:0;">
+      <i class="fas fa-users"></i>
+    </div>
+    <div>
+      <div style="font-weight:700; font-size:0.88rem; color:var(--slate-900);">Coupon Tracker</div>
+      <div class="g6-text-sm g6-muted">See who has activated</div>
+    </div>
+  </a>
+
+  <a href="{{ url_for('cashier.notifications') }}" class="g6-card"
+     style="text-decoration:none; display:flex; align-items:center; gap:0.75rem; padding:1rem;">
+    <div style="width:40px; height:40px; border-radius:var(--radius-sm);
+                background:color-mix(in srgb,var(--info) 12%,white);
+                color:var(--info); display:flex; align-items:center;
+                justify-content:center; font-size:1.1rem; flex-shrink:0;">
+      <i class="fas fa-bell"></i>
+    </div>
+    <div>
+      <div style="font-weight:700; font-size:0.88rem; color:var(--slate-900);">Messages</div>
+      <div class="g6-text-sm g6-muted">
+        {% if unread > 0 %}
+          <span style="color:var(--danger); font-weight:700;">{{ unread }} unread</span>
+        {% else %}
+          No new messages
+        {% endif %}
+      </div>
+    </div>
+  </a>
+
+  <a href="{{ url_for('auth.change_password') }}" class="g6-card"
+     style="text-decoration:none; display:flex; align-items:center; gap:0.75rem; padding:1rem;">
+    <div style="width:40px; height:40px; border-radius:var(--radius-sm);
+                background:var(--slate-100); color:var(--slate-500);
+                display:flex; align-items:center; justify-content:center;
+                font-size:1.1rem; flex-shrink:0;">
+      <i class="fas fa-key"></i>
+    </div>
+    <div>
+      <div style="font-weight:700; font-size:0.88rem; color:var(--slate-900);">Security</div>
+      <div class="g6-text-sm g6-muted">Change your password</div>
+    </div>
+  </a>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'shared/base.html' %}
+{% block title %}{{ phase_label }} — GRPMS{% endblock %}
+
+{% block sidebar %}
+<div class="g6-text-sm g6-muted" style="padding:0.5rem 0.9rem;">Navigation arrives with this portal's phase.</div>
+{% endblock %}
+
+{% block bottom_nav %}
+<a href="{{ url_for('auth.logout') }}" class="active"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+{% endblock %}
+
+{% block content %}
+<div class="g6-card" style="text-align:center; padding:3rem 1.5rem;">
+  <div style="width:64px; height:64px; background:var(--info-bg); color:var(--accent);
+              border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+              font-size:1.6rem; margin-bottom:1.25rem;">
+    <i class="fas fa-hammer"></i>
+  </div>
+  <h2 class="g6-heading" style="font-size:1.2rem; margin-bottom:0.5rem;">You're logged in successfully</h2>
+  <p class="g6-muted" style="max-width:420px; margin:0 auto 1.5rem;">
+    This is <strong>{{ phase_label }}</strong>. Login, role routing, and access control are all working —
+    the full screens for this portal will appear here once we build that phase.
+  </p>
+  <span class="g6-badge g6-badge-info">
+    <i class="fas fa-user-shield"></i> Logged in as {{ current_user.role }}
+  </span>
+</div>
+{% endblock %}

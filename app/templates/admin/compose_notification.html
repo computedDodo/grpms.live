@@ -1,0 +1,45 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Compose Message — Admin{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Communications</div>
+  <h2 class="g6-page-title"><i class="fas fa-paper-plane"></i> Compose Message</h2>
+</div>
+
+<div class="g6-card" style="max-width:580px;">
+  <form method="POST" action="{{ url_for('admin.compose_notification') }}">
+
+    <div style="margin-bottom:1rem;">
+      <label class="g6-label">Send To <span style="color:var(--danger)">*</span></label>
+      <select name="recipient_type" class="g6-select" required>
+        <option value="" disabled selected>Choose recipient...</option>
+        <option value="superadmin">School SuperAdmin (feedback / complaint)</option>
+        <option value="broadcast">Everyone in School</option>
+        <option value="Cashier">All Cashiers</option>
+        <option value="FormMaster">All Form Masters</option>
+        <option value="Teacher">All Teachers</option>
+        <option value="Student">All Students</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <label class="g6-label">Subject <span style="color:var(--danger)">*</span></label>
+      <input type="text" name="subject" class="g6-input" placeholder="Message subject" required>
+    </div>
+
+    <div style="margin-bottom:1.25rem;">
+      <label class="g6-label">Message <span style="color:var(--danger)">*</span></label>
+      <textarea name="body" class="g6-input g6-textarea" rows="6"
+                placeholder="Type your message here..." required></textarea>
+    </div>
+
+    <div style="display:flex; gap:0.75rem;">
+      <button type="submit" class="g6-btn g6-btn-primary" style="flex:1;">
+        <i class="fas fa-paper-plane"></i> Send Message
+      </button>
+      <a href="{{ url_for('admin.notifications') }}" class="g6-btn g6-btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

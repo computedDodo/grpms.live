@@ -1,0 +1,159 @@
+{% extends 'superadmin/base_superadmin.html' %}
+{% block title %}Staff Management — {{ school.name }}{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Staff Management</div>
+  <h2 class="g6-page-title"><i class="fas fa-users-cog"></i> Staff Accounts</h2>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr; gap:1.25rem;">
+  <!-- Create new staff -->
+  <div class="g6-card">
+    <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:1rem;">
+      <i class="fas fa-user-plus"></i> Create New Staff Account
+    </h3>
+    <form method="POST" action="{{ url_for('superadmin.manage_staff') }}">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
+
+        <div>
+          <label class="g6-label">Role <span style="color:var(--danger)">*</span></label>
+          <select name="role" class="g6-select" id="roleSelect" onchange="toggleTeacherFields()" required>
+            <option value="" disabled selected>Select role...</option>
+            <option value="Admin">Admin</option>
+            <option value="Cashier">Cashier</option>
+            <option value="FormMaster">Form Master</option>
+            <option value="Teacher">Teacher</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="g6-label">Username <span style="color:var(--danger)">*</span></label>
+          <input type="text" name="username" class="g6-input" placeholder="e.g. mrs.ibrahim" required>
+        </div>
+
+        <div>
+          <label class="g6-label">Initial Password <span style="color:var(--danger)">*</span></label>
+          <input type="password" name="password" class="g6-input" placeholder="Min. 6 characters" required minlength="6">
+        </div>
+
+        <!-- Teacher-only fields — shown/hidden via JS -->
+        <div id="teacherTitle" style="display:none;">
+          <label class="g6-label">Title</label>
+          <select name="title" class="g6-select">
+            <option value="">—</option>
+            <option value="Mr.">Mr.</option>
+            <option value="Mrs.">Mrs.</option>
+            <option value="Miss">Miss</option>
+            <option value="Dr.">Dr.</option>
+            <option value="Prof.">Prof.</option>
+            <option value="Malam">Malam</option>
+            <option value="Hajiya">Hajiya</option>
+          </select>
+        </div>
+
+        <div id="teacherName" style="display:none; grid-column:1/-1;">
+          <label class="g6-label">Full Name <span style="color:var(--danger)">*</span></label>
+          <input type="text" name="full_name" class="g6-input" placeholder="e.g. Fatima Ibrahim">
+        </div>
+
+      </div>
+      <button type="submit" class="g6-btn g6-btn-primary" style="margin-top:1rem; width:100%;">
+        <i class="fas fa-plus"></i> Create Account
+      </button>
+    </form>
+  </div>
+
+  <!-- Staff list -->
+  <div class="g6-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+      <h3 style="font-size:0.9rem; font-weight:700; margin:0;">Active Staff</h3>
+      <a href="{{ url_for('superadmin.staff_archive') }}" class="g6-btn g6-btn-outline"
+         style="font-size:0.78rem; padding:0.4rem 0.85rem;">
+        <i class="fas fa-archive"></i> View Archived
+      </a>
+    </div>
+
+    <!-- Search + filter -->
+    <form method="GET" action="{{ url_for('superadmin.manage_staff') }}"
+          style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem;">
+      <input type="text" name="search" class="g6-input" style="flex:2; min-width:140px;"
+             placeholder="Search username..." value="{{ request.args.get('search','') }}">
+      <select name="role" class="g6-select" style="flex:1; min-width:130px;">
+        <option value="">All Roles</option>
+        <option value="Admin"      {{ 'selected' if request.args.get('role')=='Admin' }}>Admin</option>
+        <option value="Cashier"    {{ 'selected' if request.args.get('role')=='Cashier' }}>Cashier</option>
+        <option value="FormMaster" {{ 'selected' if request.args.get('role')=='FormMaster' }}>Form Master</option>
+        <option value="Teacher"    {{ 'selected' if request.args.get('role')=='Teacher' }}>Teacher</option>
+      </select>
+      <button type="submit" class="g6-btn g6-btn-primary"><i class="fas fa-search"></i></button>
+      <a href="{{ url_for('superadmin.manage_staff') }}" class="g6-btn g6-btn-outline">Clear</a>
+    </form>
+
+    {% if staff %}
+    <div class="g6-table-responsive">
+      <table class="g6-table">
+        <thead>
+          <tr><th>Username</th><th>Role</th><th>Full Name</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for member in staff %}
+          <tr>
+            <td data-label="Username">
+              <span style="font-weight:700;">@{{ member.username }}</span>
+            </td>
+            <td data-label="Role">
+              <span class="g6-badge g6-badge-info">{{ member.role }}</span>
+            </td>
+            <td data-label="Full Name">
+              {% if member.teacher_profile %}
+                {{ member.teacher_profile.title }} {{ member.teacher_profile.full_name }}
+              {% else %}
+                <span class="g6-muted">—</span>
+              {% endif %}
+            </td>
+            <td data-label="Actions">
+              <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                <!-- Reset password -->
+                <form action="{{ url_for('superadmin.reset_staff_password', user_id=member.id) }}"
+                      method="POST" style="margin:0;"
+                      onsubmit="return confirm('Reset password for @{{ member.username }} to 12345678?')">
+                  <button type="submit" class="g6-btn g6-btn-outline"
+                          style="font-size:0.75rem; padding:0.35rem 0.7rem; color:var(--info);">
+                    <i class="fas fa-key"></i> Reset PW
+                  </button>
+                </form>
+                <!-- Archive -->
+                <form action="{{ url_for('superadmin.archive_staff', user_id=member.id) }}"
+                      method="POST" style="margin:0;"
+                      onsubmit="return confirm('Archive @{{ member.username }}? They will lose login access.')">
+                  <button type="submit" class="g6-btn g6-btn-outline"
+                          style="font-size:0.75rem; padding:0.35rem 0.7rem; color:var(--danger);">
+                    <i class="fas fa-archive"></i> Archive
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="g6-empty">
+      <i class="fas fa-users"></i>
+      <p>No active staff found. Create one above.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function toggleTeacherFields() {
+  const role = document.getElementById('roleSelect').value;
+  const show = role === 'Teacher' || role === 'FormMaster';
+  document.getElementById('teacherTitle').style.display = show ? '' : 'none';
+  document.getElementById('teacherName').style.display  = show ? '' : 'none';
+}
+</script>
+{% endblock %}

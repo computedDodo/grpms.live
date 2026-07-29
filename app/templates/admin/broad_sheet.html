@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Broad Sheet — {{ target_class.class_name }}</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap">
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Plus Jakarta Sans',sans-serif; background:#fff; color:#0f172a; }
+  .no-print { display:flex; justify-content:space-between; align-items:center; padding:1rem 1.5rem; border-bottom:1px solid #e2e8f0; }
+  .sheet-header { text-align:center; padding:1.25rem 1.5rem 0.75rem; border-bottom:3px solid #0f172a; margin-bottom:1rem; }
+  .school-name { font-size:1.6rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; }
+  .sheet-meta { font-size:0.88rem; font-weight:600; color:#475569; margin-top:4px; }
+  .table-wrap { overflow-x:auto; padding:0 1rem 2rem; }
+  table { width:100%; border-collapse:collapse; min-width:800px; font-size:0.82rem; }
+  th, td { border:1px solid #cbd5e1; padding:0.45rem 0.5rem; text-align:center; white-space:nowrap; }
+  th { background:#0f172a; color:#fff; font-weight:700; text-transform:uppercase; font-size:0.68rem; }
+  th.name-col { text-align:left; }
+  td.name-col { text-align:left; font-weight:700; position:sticky; left:0; background:#f8fafc; z-index:1; border-right:2px solid #0f172a; }
+  .fail { color:#dc2626; font-weight:700; }
+  .summary-col { background:#dbeafe; font-weight:800; }
+  @media print {
+    @page { size:legal landscape; margin:5mm; }
+    .no-print { display:none !important; }
+    body { font-size:9px; }
+    th, td { padding:2px 3px; font-size:8px; border:1px solid #000; }
+    th { background:#e2e8f0 !important; color:#000; -webkit-print-color-adjust:exact; }
+    td.name-col { background:#fff; border-right:2px solid #000; }
+    .summary-col { background:#dbeafe !important; -webkit-print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body>
+
+<div class="no-print">
+  <div>
+    <a href="{{ url_for('admin.manage_classes') }}" style="color:#334155;text-decoration:none;font-size:0.88rem;">← Back to Classes</a>
+  </div>
+  <div style="display:flex;gap:0.5rem;">
+    <button onclick="window.print()" style="background:#0f172a;color:#fff;border:none;padding:0.55rem 1.2rem;border-radius:6px;font-weight:700;cursor:pointer;font-size:0.85rem;">
+      Print Landscape
+    </button>
+  </div>
+</div>
+
+<div class="sheet-header">
+  <div class="school-name">{{ school.name if school else 'School Name' }}</div>
+  <div class="sheet-meta">OFFICIAL BROAD SHEET — CLASS: {{ target_class.class_name }}</div>
+  <div class="sheet-meta" style="color:#64748b;font-weight:400;">
+    {{ active_session.session_name }} — {{ active_term.term_name }}
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Pos</th>
+        <th>Adm No</th>
+        <th class="name-col">Student Name</th>
+        {% for subject in subjects %}
+        <th title="{{ subject.code }}">{{ subject.code }}</th>
+        {% endfor %}
+        <th class="summary-col">Total</th>
+        <th class="summary-col">Avg %</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in broad_data %}
+      <tr>
+        <td style="font-weight:700;">{{ row.position }}</td>
+        <td style="color:#64748b;font-size:0.78rem;">{{ row.student.admission_number }}</td>
+        <td class="name-col" style="text-transform:uppercase;">
+          {{ row.student.last_name }}, {{ row.student.first_name }}
+        </td>
+        {% for subject in subjects %}
+          {% set mark = row.marks.get(subject.id) %}
+          <td class="{{ 'fail' if mark is not none and mark < 40 else '' }}">
+            {{ mark if mark is not none else '—' }}
+          </td>
+        {% endfor %}
+        <td class="summary-col" style="color:#1d4ed8;">{{ row.total }}</td>
+        <td class="summary-col">{{ row.average }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="{{ subjects|length + 5 }}" style="text-align:center;padding:2rem;color:#94a3b8;">
+          No scores recorded for this class in the current term.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+</body>
+</html>

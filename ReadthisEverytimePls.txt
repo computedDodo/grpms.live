@@ -1,0 +1,3 @@
+yiu need to run grpms to start the postgre sql
+ sonce were not using sqlite again
+or run:    pg_ctl -D $PREFIX/var/lib/postgresql start

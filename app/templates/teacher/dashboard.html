@@ -1,0 +1,125 @@
+{% extends 'teacher/base_teacher.html' %}
+{% block title %}Teacher Dashboard — {{ teacher.full_name }}{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Instructor Portal</div>
+  <h2 class="g6-page-title"><i class="fas fa-chalkboard"></i> Instructor Workspace</h2>
+</div>
+
+<!-- Profile + active term -->
+<div class="g6-card" style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;
+                             margin-bottom:1.25rem; padding:1rem 1.25rem;">
+  <div style="width:48px; height:48px; border-radius:50%; background:color-mix(in srgb,var(--accent) 12%,white);
+              color:var(--accent); display:flex; align-items:center; justify-content:center;
+              font-size:1.2rem; flex-shrink:0;">
+    <i class="fas fa-user-tie"></i>
+  </div>
+  <div style="flex:1;">
+    <div style="font-weight:700; font-size:0.95rem; color:var(--slate-900);">
+      {{ teacher.title }} {{ teacher.full_name }}
+    </div>
+    <div class="g6-text-sm g6-muted">
+      Role: <strong>{{ current_user.role }}</strong>
+      {% if form_class %}
+        — Form Master of <strong>{{ form_class.class_name }}</strong>
+      {% endif %}
+    </div>
+  </div>
+  {% if active_session and active_term %}
+  <span style="background:var(--success-bg); color:var(--success); font-size:0.78rem; font-weight:700;
+               padding:0.4rem 0.9rem; border-radius:20px; white-space:nowrap;">
+    <i class="fas fa-calendar-check"></i>
+    {{ active_term.term_name }} — {{ active_session.session_name }}
+  </span>
+  {% else %}
+  <span style="background:var(--warning-bg); color:var(--warning); font-size:0.78rem; font-weight:700;
+               padding:0.4rem 0.9rem; border-radius:20px;">
+    <i class="fas fa-exclamation-triangle"></i> No active term set
+  </span>
+  {% endif %}
+</div>
+
+<!-- FormMaster quick actions -->
+{% if current_user.role == 'FormMaster' and form_class %}
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1.25rem;">
+  <a href="{{ url_for('teacher.master_list', class_id=form_class.id) }}"
+     class="g6-card" style="text-decoration:none; display:flex; align-items:center;
+                             gap:0.75rem; padding:1rem;">
+    <div style="width:40px; height:40px; border-radius:var(--radius-sm);
+                background:color-mix(in srgb,var(--accent) 12%,white);
+                color:var(--accent); display:flex; align-items:center;
+                justify-content:center; font-size:1rem; flex-shrink:0;">
+      <i class="fas fa-list-ol"></i>
+    </div>
+    <div>
+      <div style="font-weight:700; font-size:0.88rem; color:var(--slate-900);">Class Master List</div>
+      <div class="g6-text-sm g6-muted">Rankings &amp; averages</div>
+    </div>
+  </a>
+  <a href="{{ url_for('teacher.class_management', class_id=form_class.id) }}"
+     class="g6-card" style="text-decoration:none; display:flex; align-items:center;
+                             gap:0.75rem; padding:1rem;">
+    <div style="width:40px; height:40px; border-radius:var(--radius-sm);
+                background:color-mix(in srgb,var(--warning) 12%,white);
+                color:var(--warning); display:flex; align-items:center;
+                justify-content:center; font-size:1rem; flex-shrink:0;">
+      <i class="fas fa-tasks"></i>
+    </div>
+    <div>
+      <div style="font-weight:700; font-size:0.88rem; color:var(--slate-900);">Class Management</div>
+      <div class="g6-text-sm g6-muted">Promotions, remarks, archive</div>
+    </div>
+  </a>
+</div>
+{% endif %}
+
+<!-- Subject allocations -->
+<div class="g6-card">
+  <div style="font-size:0.88rem; font-weight:700; margin-bottom:0.85rem; color:var(--slate-900);">
+    <i class="fas fa-book"></i> Assigned Subjects &amp; Classes
+  </div>
+
+  {% if allocations %}
+  <div class="g6-table-responsive">
+    <table class="g6-table">
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>Code</th>
+          <th>Class</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for alloc in allocations %}
+        <tr>
+          <td data-label="Subject">
+            <span style="font-weight:700; color:var(--slate-900);">
+              {{ alloc.subject.subject_name }}
+            </span>
+          </td>
+          <td data-label="Code">
+            <span class="g6-badge g6-badge-neutral">{{ alloc.subject.subject_code }}</span>
+          </td>
+          <td data-label="Class">{{ alloc.assigned_class.class_name }}</td>
+          <td data-label="Action">
+            <a href="{{ url_for('teacher.enter_scores', allocation_id=alloc.id) }}"
+               class="g6-btn g6-btn-primary"
+               style="font-size:0.78rem; padding:0.4rem 0.9rem;">
+              <i class="fas fa-pen-to-square"></i> Enter Scores
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="g6-empty">
+    <i class="fas fa-book-open"></i>
+    <p>No subjects allocated yet. Contact your Admin.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

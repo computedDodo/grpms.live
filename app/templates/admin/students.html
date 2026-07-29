@@ -1,0 +1,156 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Students — Admin{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Records & Enrollment</div>
+  <h2 class="g6-page-title"><i class="fas fa-user-graduate"></i> Student Directory</h2>
+</div>
+
+{% if not active_session %}
+<div class="g6-flash g6-flash-warning">
+  <i class="fas fa-exclamation-triangle"></i>
+  <span>No active academic session. Ask the SuperAdmin to configure Academic Setup before enrolling students.</span>
+</div>
+{% endif %}
+
+<div style="display:grid;grid-template-columns:300px 1fr;gap:1.25rem;">
+
+  <!-- Left: Enrol forms -->
+  <div>
+    <div class="g6-card" style="margin-bottom:1rem;">
+      <h3 style="font-size:0.88rem;font-weight:700;margin-bottom:0.85rem;"><i class="fas fa-user-plus" style="color:var(--accent);"></i> Manual Enrollment</h3>
+      <form method="POST" action="{{ url_for('admin.manage_students') }}">
+        <input type="hidden" name="action" value="add_manual">
+        <div style="margin-bottom:0.75rem;">
+          <label class="g6-label">First Name <span style="color:var(--danger)">*</span></label>
+          <input type="text" name="first_name" class="g6-input" required {{ 'disabled' if not active_session }}>
+        </div>
+        <div style="margin-bottom:0.75rem;">
+          <label class="g6-label">Last Name <span style="color:var(--danger)">*</span></label>
+          <input type="text" name="last_name" class="g6-input" required {{ 'disabled' if not active_session }}>
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label class="g6-label">Assign to Class <span style="color:var(--danger)">*</span></label>
+          <select name="class_id" class="g6-select" required {{ 'disabled' if not active_session }}>
+            <option value="" disabled selected>Select class...</option>
+            {% for cls in classes %}
+            <option value="{{ cls.id }}">{{ cls.class_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="g6-flash g6-flash-info" style="font-size:0.78rem;margin-bottom:0.75rem;">
+          <i class="fas fa-info-circle"></i> Admission No. is auto-generated.
+        </div>
+        <button type="submit" class="g6-btn g6-btn-primary g6-btn-block" {{ 'disabled' if not active_session }}>
+          <i class="fas fa-check"></i> Enrol Student
+        </button>
+      </form>
+    </div>
+
+    <div class="g6-card">
+      <h3 style="font-size:0.88rem;font-weight:700;margin-bottom:0.75rem;"><i class="fas fa-file-csv" style="color:var(--success);"></i> Bulk CSV Upload</h3>
+      <form method="POST" action="{{ url_for('admin.manage_students') }}" enctype="multipart/form-data">
+        <input type="hidden" name="action" value="upload_csv">
+        <div style="margin-bottom:0.75rem;">
+          <label class="g6-label">CSV File</label>
+          <input type="file" name="csv_file" class="g6-input" accept=".csv" required {{ 'disabled' if not active_session }}
+                 style="font-size:0.8rem;padding:0.5rem;">
+          <div class="g6-text-sm g6-muted" style="margin-top:4px;">
+            Required columns: <code>First Name</code> · <code>Last Name</code> · <code>Class Name</code>
+          </div>
+        </div>
+        <button type="submit" class="g6-btn g6-btn-block"
+                style="background:var(--success);color:#fff;" {{ 'disabled' if not active_session }}>
+          <i class="fas fa-upload"></i> Import CSV
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Right: Student list -->
+  <div class="g6-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+      <h3 style="font-size:0.9rem;font-weight:700;margin:0;">Active Directory</h3>
+      <span class="g6-badge g6-badge-info">{{ students|length }} student(s)</span>
+    </div>
+
+    <!-- Search / filter bar -->
+    <form method="GET" action="{{ url_for('admin.manage_students') }}"
+          style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+      <input type="text" name="search" class="g6-input" style="flex:2;min-width:140px;"
+             placeholder="Search name or adm. no..." value="{{ request.args.get('search','') }}">
+      <select name="class_id" class="g6-select" style="flex:1;min-width:130px;">
+        <option value="">All Classes</option>
+        {% for cls in classes %}
+        <option value="{{ cls.id }}" {{ 'selected' if request.args.get('class_id')|int == cls.id }}>{{ cls.class_name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="g6-btn g6-btn-primary"><i class="fas fa-search"></i></button>
+      <a href="{{ url_for('admin.manage_students') }}" class="g6-btn g6-btn-outline">Clear</a>
+    </form>
+
+    {% if students %}
+    <div class="g6-table-responsive">
+      <table class="g6-table">
+        <thead><tr><th>Adm. No.</th><th>Name</th><th>Class</th><th>Actions</th></tr></thead>
+        <tbody>
+          {% for s in students %}
+          <tr>
+            <td data-label="Adm. No."><span style="font-weight:700;color:var(--accent);">{{ s.admission_number }}</span></td>
+            <td data-label="Name" style="font-weight:700;">{{ s.last_name }}, {{ s.first_name }}</td>
+            <td data-label="Class">
+              <span class="g6-badge g6-badge-neutral">{{ s.student_class.class_name if s.student_class else '—' }}</span>
+            </td>
+            <td data-label="Actions">
+              <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                <a href="{{ url_for('admin.edit_student', student_id=s.id) }}"
+                   class="g6-btn g6-btn-outline" style="font-size:0.75rem;padding:0.45rem 0.7rem;"
+                   title="Edit Student">
+                  <i class="fas fa-edit"></i>
+                  <span style="display:none;" class="btn-label"> Edit</span>
+                </a>
+                <a href="{{ url_for('admin.report_card', student_id=s.id) }}"
+                   class="g6-btn g6-btn-outline" style="font-size:0.75rem;padding:0.45rem 0.7rem;"
+                   title="Report Card">
+                  <i class="fas fa-file-invoice"></i>
+                  <span style="display:none;" class="btn-label"> Card</span>
+                </a>
+                <a href="{{ url_for('admin.transcript', student_id=s.id) }}"
+                   class="g6-btn g6-btn-outline" style="font-size:0.75rem;padding:0.45rem 0.7rem;"
+                   title="Transcript">
+                  <i class="fas fa-graduation-cap"></i>
+                  <span style="display:none;" class="btn-label"> Transcript</span>
+                </a>
+                <form action="{{ url_for('admin.reset_student_password', student_id=s.id) }}" method="POST" style="margin:0;"
+                      onsubmit="return confirm('Reset password for {{ s.first_name }} to 12345678?')">
+                  <button type="submit" class="g6-btn g6-btn-outline"
+                          style="font-size:0.75rem;padding:0.45rem 0.7rem;color:var(--info);"
+                          title="Reset Password">
+                    <i class="fas fa-key"></i>
+                    <span style="display:none;" class="btn-label"> Reset</span>
+                  </button>
+                </form>
+                <form action="{{ url_for('admin.archive_student', student_id=s.id) }}" method="POST" style="margin:0;"
+                      onsubmit="return confirm('Archive {{ s.first_name }} {{ s.last_name }}?')">
+                  <button type="submit" class="g6-btn g6-btn-outline"
+                          style="font-size:0.75rem;padding:0.45rem 0.7rem;color:var(--warning);"
+                          title="Archive Student">
+                    <i class="fas fa-archive"></i>
+                    <span style="display:none;" class="btn-label"> Archive</span>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="g6-empty"><i class="fas fa-user-graduate"></i><p>No students found.</p></div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

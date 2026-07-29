@@ -1,0 +1,122 @@
+{% extends 'superadmin/base_superadmin.html' %}
+{% block title %}Coupon Register — {{ school.name }}{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Fee Management</div>
+  <h2 class="g6-page-title"><i class="fas fa-ticket-alt"></i> Coupon Register</h2>
+  <p class="g6-text-sm g6-muted" style="margin-top:0.25rem;">
+    Read-only view. Coupon generation is managed by the Platform Admin.
+  </p>
+</div>
+
+<!-- Filters -->
+<div class="g6-card" style="margin-bottom:1rem;">
+  <form method="GET" action="{{ url_for('superadmin.coupon_register') }}"
+        style="display:flex; flex-wrap:wrap; gap:0.75rem; align-items:flex-end;">
+    <div style="flex:2; min-width:150px;">
+      <label class="g6-label">Term</label>
+      <select name="term_id" class="g6-select">
+        <option value="">All Terms</option>
+        {% for t in terms %}
+        <option value="{{ t.id }}" {{ 'selected' if filters.term_id == t.id }}>
+          {{ t.term_name }} — {{ t.session.session_name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="flex:1; min-width:120px;">
+      <label class="g6-label">Status</label>
+      <select name="status" class="g6-select">
+        <option value="all"    {{ 'selected' if filters.status == 'all' }}>All</option>
+        <option value="unused" {{ 'selected' if filters.status == 'unused' }}>Unused</option>
+        <option value="used"   {{ 'selected' if filters.status == 'used' }}>Used</option>
+      </select>
+    </div>
+    <div style="flex:2; min-width:150px;">
+      <label class="g6-label">Search Code</label>
+      <input type="text" name="search" class="g6-input" placeholder="Search code..."
+             value="{{ filters.search or '' }}">
+    </div>
+    <div style="display:flex; gap:0.5rem;">
+      <button type="submit" class="g6-btn g6-btn-primary"><i class="fas fa-filter"></i> Filter</button>
+      <a href="{{ url_for('superadmin.coupon_register') }}" class="g6-btn g6-btn-outline">Clear</a>
+    </div>
+  </form>
+</div>
+
+<!-- Summary -->
+<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.75rem; margin-bottom:1rem;">
+  <div class="g6-card" style="text-align:center; padding:0.85rem;">
+    <div style="font-size:1.5rem; font-weight:800; color:var(--slate-900);">{{ total_count }}</div>
+    <div style="font-size:0.72rem; text-transform:uppercase; color:var(--slate-500); font-weight:700;">Total</div>
+  </div>
+  <div class="g6-card" style="text-align:center; padding:0.85rem;">
+    <div style="font-size:1.5rem; font-weight:800; color:var(--success);">{{ unused_count }}</div>
+    <div style="font-size:0.72rem; text-transform:uppercase; color:var(--slate-500); font-weight:700;">Unused</div>
+  </div>
+  <div class="g6-card" style="text-align:center; padding:0.85rem;">
+    <div style="font-size:1.5rem; font-weight:800; color:var(--accent);">{{ used_count }}</div>
+    <div style="font-size:0.72rem; text-transform:uppercase; color:var(--slate-500); font-weight:700;">Used</div>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="g6-card">
+  <p class="g6-text-sm g6-muted" style="margin-bottom:0.75rem;">
+    Showing {{ coupons|length }} result(s)
+    {% if coupons|length == 500 %} — capped at 500; narrow with filters{% endif %}
+  </p>
+  {% if coupons %}
+  <div class="g6-table-responsive">
+    <table class="g6-table">
+      <thead>
+        <tr><th>Code</th><th>Term</th><th>Status</th><th>Used By</th><th>Date Used</th></tr>
+      </thead>
+      <tbody>
+        {% for coupon in coupons %}
+        <tr>
+          <td data-label="Code">
+            <code style="font-size:0.92rem; font-weight:700; letter-spacing:0.08em;
+                         background:var(--slate-100); padding:2px 8px; border-radius:4px;">
+              {{ coupon.code }}
+            </code>
+          </td>
+          <td data-label="Term">{{ coupon.term.term_name }} — {{ coupon.term.session.session_name }}</td>
+          <td data-label="Status">
+            {% if coupon.is_used %}
+              <span class="g6-badge g6-badge-danger"><i class="fas fa-lock"></i> Used</span>
+            {% else %}
+              <span class="g6-badge g6-badge-success"><i class="fas fa-check"></i> Unused</span>
+            {% endif %}
+          </td>
+          <td data-label="Used By">
+            {% if coupon.used_by %}
+              <span style="font-weight:600;">
+                {{ coupon.used_by.last_name }}, {{ coupon.used_by.first_name }}
+              </span>
+              <div class="g6-text-sm g6-muted">{{ coupon.used_by.admission_number }}</div>
+            {% else %}
+              <span class="g6-muted">—</span>
+            {% endif %}
+          </td>
+          <td data-label="Date Used">
+            {% if coupon.used_at %}
+              {{ coupon.used_at.strftime('%d %b %Y, %H:%M') }}
+            {% else %}
+              <span class="g6-muted">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="g6-empty">
+    <i class="fas fa-ticket-alt"></i>
+    <p>No coupons match these filters.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

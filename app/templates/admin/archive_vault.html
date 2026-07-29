@@ -1,0 +1,116 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Archive Vault — Admin{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">Records</div>
+  <h2 class="g6-page-title"><i class="fas fa-archive"></i> Archive Vault</h2>
+</div>
+
+<!-- General Archives (transfers / suspensions) -->
+<div class="g6-card" style="margin-bottom:1.25rem;border-left:4px solid var(--warning);">
+  <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:0.85rem;">
+    <i class="fas fa-user-slash" style="color:var(--warning);"></i> General Archive — Transfers / Suspensions
+  </h3>
+  {% if general_archives %}
+  <div class="g6-table-responsive" style="max-height:320px;overflow-y:auto;">
+    <table class="g6-table">
+      <thead><tr><th>Adm. No.</th><th>Name</th><th>Archived</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for s in general_archives %}
+        <tr>
+          <td data-label="Adm. No." class="g6-muted">{{ s.admission_number }}</td>
+          <td data-label="Name" style="font-weight:700;">{{ s.last_name }}, {{ s.first_name }}</td>
+          <td data-label="Archived" class="g6-text-sm g6-muted">{{ s.archive_date.strftime('%d %b %Y') if s.archive_date else '—' }}</td>
+          <td data-label="Actions">
+            <div style="display:flex;gap:0.4rem;">
+              <a href="{{ url_for('admin.transcript', student_id=s.id) }}"
+                 class="g6-btn g6-btn-outline" style="font-size:0.72rem;padding:0.3rem 0.6rem;" target="_blank">
+                <i class="fas fa-file-alt"></i> Record
+              </a>
+              <form action="{{ url_for('admin.restore_student', student_id=s.id) }}" method="POST" style="margin:0;"
+                    onsubmit="return confirm('Restore {{ s.first_name }} {{ s.last_name }}?')">
+                <button type="submit" class="g6-btn g6-btn-outline"
+                        style="font-size:0.72rem;padding:0.3rem 0.6rem;color:var(--success);">
+                  <i class="fas fa-undo"></i> Restore
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="g6-empty" style="padding:1.5rem;"><i class="fas fa-check-circle"></i><p>No general archives.</p></div>
+  {% endif %}
+</div>
+
+<!-- Alumni Vault -->
+<div class="g6-card" style="margin-bottom:1.25rem;border-left:4px solid var(--success);">
+  <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:0.85rem;">
+    <i class="fas fa-graduation-cap" style="color:var(--success);"></i> Alumni Vault — Graduates
+  </h3>
+  {% if alumni %}
+  <div class="g6-table-responsive" style="max-height:320px;overflow-y:auto;">
+    <table class="g6-table">
+      <thead><tr><th>Adm. No.</th><th>Name</th><th>Graduation Year</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for s in alumni %}
+        <tr>
+          <td data-label="Adm. No." class="g6-muted">{{ s.admission_number }}</td>
+          <td data-label="Name" style="font-weight:700;">{{ s.last_name }}, {{ s.first_name }}</td>
+          <td data-label="Graduation">{{ s.archive_date.strftime('%Y') if s.archive_date else '—' }}</td>
+          <td data-label="Actions">
+            <a href="{{ url_for('admin.transcript', student_id=s.id) }}"
+               class="g6-btn g6-btn-outline" style="font-size:0.72rem;padding:0.3rem 0.6rem;" target="_blank">
+              <i class="fas fa-graduation-cap"></i> Full Transcript
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="g6-empty" style="padding:1.5rem;"><i class="fas fa-graduation-cap"></i><p>No alumni records yet.</p></div>
+  {% endif %}
+</div>
+
+<!-- Archived Staff -->
+<div class="g6-card" style="border-left:4px solid var(--danger);">
+  <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:0.85rem;">
+    <i class="fas fa-user-times" style="color:var(--danger);"></i> Archived Staff
+  </h3>
+  {% if archived_staff %}
+  <div class="g6-table-responsive">
+    <table class="g6-table">
+      <thead><tr><th>Username</th><th>Role</th><th>Full Name</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for u in archived_staff %}
+        <tr>
+          <td data-label="Username" style="font-weight:700;">@{{ u.username }}</td>
+          <td data-label="Role"><span class="g6-badge g6-badge-neutral">{{ u.role }}</span></td>
+          <td data-label="Full Name">
+            {{ u.teacher_profile.title ~ ' ' ~ u.teacher_profile.full_name if u.teacher_profile else '—' }}
+          </td>
+          <td data-label="Action">
+            <form action="{{ url_for('admin.restore_staff_from_vault', user_id=u.id) }}" method="POST" style="margin:0;"
+                  onsubmit="return confirm('Restore @{{ u.username }} to active staff?')">
+              <button type="submit" class="g6-btn g6-btn-outline"
+                      style="font-size:0.75rem;padding:0.35rem 0.7rem;color:var(--success);">
+                <i class="fas fa-undo"></i> Restore
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="g6-empty" style="padding:1.5rem;"><i class="fas fa-users"></i><p>No archived staff.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

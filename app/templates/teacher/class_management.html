@@ -1,0 +1,222 @@
+{% extends 'teacher/base_teacher.html' %}
+{% block title %}Class Management — {{ form_class.class_name }}{% endblock %}
+
+{% block content %}
+<div class="g6-page-header">
+  <div class="g6-eyebrow">{{ form_class.class_name }}</div>
+  <h2 class="g6-page-title">
+    <i class="fas fa-tasks"></i> Class Management
+  </h2>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+
+  <!-- LEFT: Remarks config + Bulk promotion -->
+  <div style="display:flex; flex-direction:column; gap:1rem;">
+
+    <!-- 8.5 Automated remarks -->
+    <div class="g6-card">
+      <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:0.75rem;">
+        <i class="fas fa-comment-dots" style="color:var(--accent);"></i>
+        Automated Remarks by Average
+      </h3>
+      <p class="g6-text-sm g6-muted" style="margin-bottom:1rem;">
+        These comments appear automatically on report cards based on each student's final average.
+      </p>
+      <form method="POST" action="{{ url_for('teacher.class_management', class_id=form_class.id) }}">
+        <input type="hidden" name="action" value="save_remarks">
+
+        {% set remark_ranges = [
+          ('70–100%', 'remark_a', form_class.remark_a, '#16a34a'),
+          ('60–69%',  'remark_b', form_class.remark_b, '#2563eb'),
+          ('50–59%',  'remark_c', form_class.remark_c, '#0d9488'),
+          ('40–49%',  'remark_d', form_class.remark_d, '#d97706'),
+          ('0–39%',   'remark_f', form_class.remark_f, '#dc2626'),
+        ] %}
+        {% for range_label, field_name, current_val, color in remark_ranges %}
+        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.65rem;">
+          <span style="background:{{ color }}20; color:{{ color }}; font-size:0.7rem;
+                       font-weight:700; padding:0.3rem 0.6rem; border-radius:6px;
+                       white-space:nowrap; min-width:64px; text-align:center;">
+            {{ range_label }}
+          </span>
+          <input type="text" name="{{ field_name }}" class="g6-input"
+                 value="{{ current_val }}" required style="font-size:0.85rem;">
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="g6-btn g6-btn-primary g6-btn-block" style="margin-top:0.5rem;">
+          <i class="fas fa-save"></i> Save Remarks
+        </button>
+      </form>
+    </div>
+
+    <!-- 8.4 Bulk promotion -->
+    <div class="g6-card">
+      <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:0.5rem;">
+        <i class="fas fa-level-up-alt" style="color:var(--success);"></i> Bulk Promotion
+      </h3>
+      <p class="g6-text-sm g6-muted" style="margin-bottom:1rem;">
+        Move students whose average meets or exceeds the cut-off to the next class.
+        Students who were already promoted are skipped automatically.
+      </p>
+      <form method="POST"
+            action="{{ url_for('teacher.class_management', class_id=form_class.id) }}"
+            onsubmit="return confirm('Execute bulk promotion? This moves qualifying students to the selected class immediately.')">
+        <input type="hidden" name="action" value="bulk_promote">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1rem;">
+          <div>
+            <label class="g6-label">Cut-off Average (%)</label>
+            <input type="number" name="cutoff_avg" class="g6-input"
+                   placeholder="e.g. 50" min="0" max="100" step="0.5" required>
+          </div>
+          <div>
+            <label class="g6-label">Promote To</label>
+            <select name="next_class_id" class="g6-select" required>
+              <option value="" disabled selected>Select class...</option>
+              {% for c in valid_targets %}
+              <option value="{{ c.id }}" {{ 'selected' if c.id == form_class.id }}>
+                {{ c.class_name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="g6-btn g6-btn-block"
+                style="background:var(--success); color:#fff; font-weight:700;">
+          <i class="fas fa-arrow-up"></i> Execute Promotion
+        </button>
+      </form>
+    </div>
+
+    <!-- 8.7 Graduation / Alumni archive (only for final year classes) -->
+    {% if 'sss 3' in form_class.class_name.lower() or 'ss3' in form_class.class_name.lower()
+       or 'primary 6' in form_class.class_name.lower() %}
+    <div class="g6-card" style="border:2px solid var(--danger);">
+      <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:0.5rem; color:var(--danger);">
+        <i class="fas fa-graduation-cap"></i> Graduate &amp; Archive Class
+      </h3>
+      <p class="g6-text-sm g6-muted" style="margin-bottom:1rem;">
+        Moves all active students in this class to the Alumni Vault and revokes their login access.
+        Use only at the end of the final academic year.
+      </p>
+      <form method="POST"
+            action="{{ url_for('teacher.class_management', class_id=form_class.id) }}"
+            onsubmit="return confirm('WARNING: This will archive ALL active students in this class and revoke their login access. This cannot be undone. Proceed?')">
+        <input type="hidden" name="action" value="bulk_archive">
+        <button type="submit" class="g6-btn g6-btn-danger g6-btn-block">
+          <i class="fas fa-archive"></i> Graduate &amp; Archive to Alumni Vault
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- RIGHT: Revoke promotion + incoming students -->
+  <div style="display:flex; flex-direction:column; gap:1rem;">
+
+    <!-- 8.6 Revoke promotion -->
+    <div class="g6-card">
+      <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:0.5rem;">
+        <i class="fas fa-undo" style="color:var(--danger);"></i> Recently Promoted
+        <span style="font-size:0.75rem; font-weight:500; color:var(--slate-500);">
+          (revoke if needed)
+        </span>
+      </h3>
+
+      {% if active_term and active_term.term_name != 'Third Term' %}
+      <div class="g6-flash g6-flash-warning" style="margin-bottom:0.75rem;">
+        <i class="fas fa-lock"></i>
+        <span style="font-size:0.82rem;">
+          Revoke is locked — a new academic term is already active.
+        </span>
+      </div>
+      {% endif %}
+
+      {% if recently_promoted %}
+      <div style="max-height:260px; overflow-y:auto;">
+        <table class="g6-table">
+          <thead>
+            <tr><th>Student</th><th>Now In</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for s in recently_promoted %}
+            <tr>
+              <td style="font-weight:600; font-size:0.85rem;">
+                {{ s.first_name }} {{ s.last_name }}
+              </td>
+              <td class="g6-text-sm g6-muted">
+                {{ s.student_class.class_name if s.student_class else '—' }}
+              </td>
+              <td>
+                <form method="POST"
+                      action="{{ url_for('teacher.class_management', class_id=form_class.id) }}"
+                      style="margin:0;">
+                  <input type="hidden" name="action"     value="revoke_promotion">
+                  <input type="hidden" name="student_id" value="{{ s.id }}">
+                  <button type="submit"
+                          class="g6-btn g6-btn-outline"
+                          style="font-size:0.75rem; padding:0.3rem 0.65rem; color:var(--danger);"
+                          {{ 'disabled' if active_term and active_term.term_name != 'Third Term' }}>
+                    Revoke
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="g6-empty" style="padding:1.5rem;">
+        <i class="fas fa-check-circle"></i>
+        <p style="font-size:0.82rem;">No recently promoted students.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Incoming students (promoted in, quarantined until new session) -->
+    <div class="g6-card">
+      <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:0.5rem;">
+        <i class="fas fa-user-plus" style="color:var(--info);"></i> Incoming Students
+        <span style="font-size:0.75rem; font-weight:500; color:var(--slate-500);">
+          (arriving from lower class)
+        </span>
+      </h3>
+      <p class="g6-text-sm g6-muted" style="margin-bottom:0.75rem;">
+        These students were promoted into your class. They join your active list when the
+        Admin starts the next Academic Session.
+      </p>
+      {% if incoming_students %}
+      <div style="max-height:200px; overflow-y:auto;">
+        <table class="g6-table">
+          <thead>
+            <tr><th>Student</th><th>Adm No.</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            {% for s in incoming_students %}
+            <tr>
+              <td style="font-weight:600; font-size:0.85rem;">
+                {{ s.first_name }} {{ s.last_name }}
+              </td>
+              <td class="g6-text-sm g6-muted">{{ s.admission_number }}</td>
+              <td>
+                <span class="g6-badge g6-badge-info">Arriving</span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="g6-empty" style="padding:1.25rem;">
+        <i class="fas fa-inbox"></i>
+        <p style="font-size:0.82rem;">No incoming students yet.</p>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}
