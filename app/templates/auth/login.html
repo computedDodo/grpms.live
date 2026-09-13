@@ -2,40 +2,170 @@
 {% block title %}Login — GRPMS{% endblock %}
 
 {% block guest_content %}
-<div style="min-height: 70vh; display:flex; align-items:center; justify-content:center; padding: 1rem;">
-  <div style="width:100%; max-width:420px; background:var(--white); border-radius:var(--radius-lg);
-              box-shadow:var(--shadow-card); border:1px solid var(--slate-200); overflow:hidden;">
+<style>
+  .login-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    /* Mimics the hero section from the landing page */
+    background: linear-gradient(160deg, #0a0e17 0%, #1a2236 60%, #0d1b3e 100%);
+    position: relative;
+    overflow: hidden;
+    margin: -1rem; /* Adjusts for potential padding in base.html body */
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
 
+  /* Decorative background circles */
+  .login-wrapper::before {
+    content: '';
+    position: absolute; top: -20%; right: -15%;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(0,180,230,0.12) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .login-wrapper::after {
+    content: '';
+    position: absolute; bottom: -10%; left: -10%;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(126,211,33,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  /* Glassmorphism Card Effect */
+  .login-card {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+  }
+
+  .login-brand {
+    font-family: 'Lora', serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(135deg, #00B4E6, #7ED321);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Custom dark-themed inputs */
+  .login-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    outline: none;
+    transition: all 0.2s;
+    font-size: 0.95rem;
+  }
+  .login-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+  }
+  .login-input:focus {
+    border-color: #00B4E6;
+    background: rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0 3px rgba(0, 180, 230, 0.15);
+  }
+
+  /* Matches btn-hero-primary from landing page */
+  .login-btn-submit {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #7ED321, #5db800);
+    color: #0a0e17;
+    font-weight: 800;
+    font-size: 1rem;
+    padding: 0.95rem 1.75rem;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(126,211,33,0.3);
+    transition: filter 0.2s, transform 0.1s;
+  }
+  .login-btn-submit:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+
+  .login-label {
+    display: block;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    transition: color 0.2s;
+  }
+  .back-btn:hover {
+    color: #00B4E6;
+  }
+</style>
+
+<div class="login-wrapper">
+  <div class="login-card">
     <div style="text-align:center; padding: 2.5rem 1.5rem 1.5rem;">
-      <div style="width:64px; height:64px; background:var(--blue-50); color:var(--blue-600);
-                  border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
-                  font-size:1.6rem; margin-bottom:1rem;">
-        <i class="fas fa-graduation-cap"></i>
+      <!-- FRONTEND ONLY: BACK TO LANDING PAGE BUTTON -->
+      <a href="/" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Back to Home
+      </a>
+
+      <div style="margin-bottom:0.5rem;">
+        <h1 class="login-brand">GRPMS</h1>
+        <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.85rem; margin:0;">
+          Grade &amp; Result Processing &amp; Management System
+        </p>
       </div>
-      <h1 class="g6-heading" style="font-size:1.3rem; margin-bottom:0.25rem;">GRPMS</h1>
-      <p class="g6-muted g6-text-sm" style="margin:0;">Grade &amp; Result Processing &amp; Management System</p>
     </div>
 
-    <div style="padding: 0 1.5rem 2rem;">
+    <div style="padding: 0 1.5rem 2.5rem;">
+      <!-- Backend logic remains completely untouched -->
       <form method="POST" action="{{ url_for('auth.login') }}">
-        <div style="margin-bottom: 1rem;">
-          <label class="g6-label" for="username">Username</label>
-          <input type="text" id="username" name="username" class="g6-input" placeholder="Enter your username" required autofocus>
+        <div style="margin-bottom: 1.25rem;">
+          <label class="login-label" for="username">Username</label>
+          <input type="text" id="username" name="username" class="login-input" placeholder="Enter your username" required autofocus>
         </div>
 
-        <div style="margin-bottom: 1.5rem;">
-          <label class="g6-label" for="password">Password</label>
-          <input type="password" id="password" name="password" class="g6-input" placeholder="Enter your password" required>
+        <div style="margin-bottom: 2rem;">
+          <label class="login-label" for="password">Password</label>
+          <input type="password" id="password" name="password" class="login-input" placeholder="Enter your password" required>
         </div>
 
-        <button type="submit" class="g6-btn g6-btn-primary g6-btn-block">
+        <button type="submit" class="login-btn-submit">
           <i class="fas fa-sign-in-alt"></i> Sign In
         </button>
       </form>
     </div>
 
-    <div style="text-align:center; padding: 1rem 1.5rem; background:var(--slate-50); border-top:1px solid var(--slate-200);">
-      <span class="g6-text-sm g6-muted"><i class="fas fa-info-circle"></i> Forgot your login? Ask your school administrator.</span>
+    <div style="text-align:center; padding: 1.25rem 1.5rem; background: rgba(0, 0, 0, 0.2); border-top: 1px solid rgba(255, 255, 255, 0.05);">
+      <span style="font-size: 0.8rem; color: rgba(255, 255, 255, 0.4);">
+        <i class="fas fa-info-circle"></i> Forgot your login? Ask your school administrator.
+      </span>
     </div>
   </div>
 </div>

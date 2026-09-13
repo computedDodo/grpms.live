@@ -24,7 +24,6 @@ class School(db.Model):
     is_active      = db.Column(db.Boolean, default=True)
     created_at     = db.Column(db.DateTime, default=datetime.utcnow)
     code           = db.Column(db.String(6), nullable=True)
-    show_arabic_column = db.Column(db.Boolean, default=False)
     # relationships
     users    = db.relationship('User',            backref='school', lazy='dynamic')
     sessions = db.relationship('AcademicSession', backref='school', lazy='dynamic')
@@ -253,7 +252,6 @@ class Subject(db.Model):
     subject_name = db.Column(db.String(64), nullable=False)
     subject_code = db.Column(db.String(10), nullable=False)
     section      = db.Column(db.String(30), default='All Sections', nullable=False)
-    arabic_name  = db.Column(db.String(100), nullable=True)
 
     allocations = db.relationship('SubjectAllocation', backref='subject', lazy='dynamic')
     scores      = db.relationship('Score',             backref='subject', lazy='dynamic')
@@ -426,44 +424,3 @@ class Notification(db.Model):
 
     def __repr__(self):
         return f'<Notification "{self.subject}" from user {self.sender_id}>'
-
-# --------------------------------------------------->
-# MARKINGSCHEME
-# --------------------------------------------------->
-
-class SectionMarkScheme(db.Model):
-    __tablename__ = 'section_mark_schemes'
-
-    id = db.Column(db.Integer, primary_key=True)
-    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=False)
-    section = db.Column(db.String(30), nullable=False)
-
-    # Component 1 (Maps to ca_1)
-    comp1_label = db.Column(db.String(30), default='CA 1')
-    comp1_max = db.Column(db.Float, default=10.0)
-
-    # Component 2 (Maps to ca_2)
-    comp2_label = db.Column(db.String(30), default='CA 2')
-    comp2_max = db.Column(db.Float, default=10.0)
-
-    # Component 3 (Maps to assign_1)
-    comp3_label = db.Column(db.String(30), default='Ass 1')
-    comp3_max = db.Column(db.Float, default=10.0)
-
-    # Component 4 (Maps to assign_2)
-    comp4_label = db.Column(db.String(30), default='Ass 2')
-    comp4_max = db.Column(db.Float, default=10.0)
-
-    # Component 5 (Maps to exam)
-    comp5_label = db.Column(db.String(30), default='Exam')
-    comp5_max = db.Column(db.Float, default=60.0)
-
-    # Optional Component 6
-    comp6_label = db.Column(db.String(30), nullable=True)
-    comp6_max = db.Column(db.Float, default=0.0)
-
-    school = db.relationship('School', backref='mark_schemes')
-
-    __table_args__ = (
-        db.UniqueConstraint('school_id', 'section', name='uq_school_section_scheme'),
-    )

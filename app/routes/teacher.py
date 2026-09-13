@@ -150,21 +150,33 @@ def enter_scores(allocation_id):
         saved   = 0
         skipped = 0
 
+        # NEW: Fetch the specific mark scheme for this class's section
+        from app.models import SectionMarkScheme
+        section = allocation.assigned_class.section if allocation.assigned_class else 'All Sections'
+        scheme = SectionMarkScheme.query.filter_by(school_id=current_user.school_id, section=section).first()
+
+        c1_max = scheme.comp1_max if scheme else 10.0
+        c2_max = scheme.comp2_max if scheme else 10.0
+        c3_max = scheme.comp3_max if scheme else 10.0
+        c4_max = scheme.comp4_max if scheme else 10.0
+        c5_max = scheme.comp5_max if scheme else 60.0
+
         for student in students:
             sid = str(student.id)
             try:
-                ca1  = float(request.form.get(f'ca1_{sid}')  or 0)
-                ca2  = float(request.form.get(f'ca2_{sid}')  or 0)
-                ass1 = float(request.form.get(f'ass1_{sid}') or 0)
-                ass2 = float(request.form.get(f'ass2_{sid}') or 0)
-                exam = float(request.form.get(f'exam_{sid}') or 0)
+                # If a field is disabled/missing because max is 0, default to 0
+                ca1  = float(request.form.get(f'ca1_{sid}')  or 0) if c1_max > 0 else 0.0
+                ca2  = float(request.form.get(f'ca2_{sid}')  or 0) if c2_max > 0 else 0.0
+                ass1 = float(request.form.get(f'ass1_{sid}') or 0) if c3_max > 0 else 0.0
+                ass2 = float(request.form.get(f'ass2_{sid}') or 0) if c4_max > 0 else 0.0
+                exam = float(request.form.get(f'exam_{sid}') or 0) if c5_max > 0 else 0.0
 
-                # Clamp to valid ranges
-                ca1  = max(0, min(ca1,  10))
-                ca2  = max(0, min(ca2,  10))
-                ass1 = max(0, min(ass1, 10))
-                ass2 = max(0, min(ass2, 10))
-                exam = max(0, min(exam, 60))
+                # Clamp to the dynamic valid ranges from the scheme!
+                ca1  = max(0, min(ca1,  c1_max))
+                ca2  = max(0, min(ca2,  c2_max))
+                ass1 = max(0, min(ass1, c3_max))
+                ass2 = max(0, min(ass2, c4_max))
+                exam = max(0, min(exam, c5_max))
 
                 total          = ca1 + ca2 + ass1 + ass2 + exam
                 grade, remark  = compute_grade_and_remark(total)

@@ -27,6 +27,13 @@
                  placeholder="e.g. MTH" maxlength="10"
                  style="text-transform:uppercase; font-family:monospace; font-weight:700;" required>
         </div>
+        {% if current_user.school.show_arabic_column %}
+        <div>
+          <label class="g6-label">Arabic / Alternative Name (Optional)</label>
+          <input type="text" name="arabic_name" class="g6-input"
+                 placeholder="e.g. القرآن الكريم" dir="auto">
+        </div>
+        {% endif %}
         <div>
           <label class="g6-label">
             Section <span style="color:var(--danger)">*</span>

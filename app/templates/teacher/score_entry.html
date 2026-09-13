@@ -29,36 +29,54 @@
     <!-- Desktop table -->
     <div style="overflow-x:auto;">
       <table style="width:100%; border-collapse:collapse; min-width:700px;">
+        <!-- Fetch scheme dynamically using Jinja -->
+        {% set scheme = current_user.school.mark_schemes | selectattr('section', 'equalto', allocation.assigned_class.section) | first %}
+        {% set c1_lbl = scheme.comp1_label if scheme else 'CA 1' %}
+        {% set c1_max = scheme.comp1_max if scheme else 10.0 %}
+        {% set c2_lbl = scheme.comp2_label if scheme else 'CA 2' %}
+        {% set c2_max = scheme.comp2_max if scheme else 10.0 %}
+        {% set c3_lbl = scheme.comp3_label if scheme else 'Ass 1' %}
+        {% set c3_max = scheme.comp3_max if scheme else 10.0 %}
+        {% set c4_lbl = scheme.comp4_label if scheme else 'Ass 2' %}
+        {% set c4_max = scheme.comp4_max if scheme else 10.0 %}
+        {% set c5_lbl = scheme.comp5_label if scheme else 'Exam' %}
+        {% set c5_max = scheme.comp5_max if scheme else 60.0 %}
+
         <thead>
           <tr style="background:var(--slate-50); border-bottom:2px solid var(--slate-200);">
-            <th style="padding:0.85rem 1rem; text-align:left; font-size:0.72rem;
-                       text-transform:uppercase; color:var(--slate-500); font-weight:700;">
-              Student
+            <th style="padding:0.85rem 1rem; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--slate-500); font-weight:700;">Student</th>
+
+            {% if c1_max > 0 %}
+            <th style="padding:0.85rem 0.5rem; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--slate-500); font-weight:700;">
+              {{ c1_lbl }}<br><span style="font-size:0.65rem; font-weight:500;">/{{ c1_max|int }}</span>
             </th>
-            <th style="padding:0.85rem 0.5rem; text-align:center; font-size:0.72rem;
-                       text-transform:uppercase; color:var(--slate-500); font-weight:700;">
-              CA 1<br><span style="font-size:0.65rem; font-weight:500;">/10</span>
+            {% endif %}
+
+            {% if c2_max > 0 %}
+            <th style="padding:0.85rem 0.5rem; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--slate-500); font-weight:700;">
+              {{ c2_lbl }}<br><span style="font-size:0.65rem; font-weight:500;">/{{ c2_max|int }}</span>
             </th>
-            <th style="padding:0.85rem 0.5rem; text-align:center; font-size:0.72rem;
-                       text-transform:uppercase; color:var(--slate-500); font-weight:700;">
-              CA 2<br><span style="font-size:0.65rem; font-weight:500;">/10</span>
+            {% endif %}
+
+            {% if c3_max > 0 %}
+            <th style="padding:0.85rem 0.5rem; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--slate-500); font-weight:700;">
+              {{ c3_lbl }}<br><span style="font-size:0.65rem; font-weight:500;">/{{ c3_max|int }}</span>
             </th>
-            <th style="padding:0.85rem 0.5rem; text-align:center; font-size:0.72rem;
-                       text-transform:uppercase; color:var(--slate-500); font-weight:700;">
-              Ass 1<br><span style="font-size:0.65rem; font-weight:500;">/10</span>
+            {% endif %}
+
+            {% if c4_max > 0 %}
+            <th style="padding:0.85rem 0.5rem; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--slate-500); font-weight:700;">
+              {{ c4_lbl }}<br><span style="font-size:0.65rem; font-weight:500;">/{{ c4_max|int }}</span>
             </th>
-            <th style="padding:0.85rem 0.5rem; text-align:center; font-size:0.72rem;
-                       text-transform:uppercase; color:var(--slate-500); font-weight:700;">
-              Ass 2<br><span style="font-size:0.65rem; font-weight:500;">/10</span>
+            {% endif %}
+
+            {% if c5_max > 0 %}
+            <th style="padding:0.85rem 0.5rem; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--slate-500); font-weight:700;">
+              {{ c5_lbl }}<br><span style="font-size:0.65rem; font-weight:500;">/{{ c5_max|int }}</span>
             </th>
-            <th style="padding:0.85rem 0.5rem; text-align:center; font-size:0.72rem;
-                       text-transform:uppercase; color:var(--slate-500); font-weight:700;">
-              Exam<br><span style="font-size:0.65rem; font-weight:500;">/60</span>
-            </th>
-            <th style="padding:0.85rem 0.5rem; text-align:center; font-size:0.72rem;
-                       text-transform:uppercase; color:var(--slate-500); font-weight:700;">
-              Total
-            </th>
+            {% endif %}
+
+            <th style="padding:0.85rem 0.5rem; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--slate-500); font-weight:700;">Total</th>
           </tr>
         </thead>
         <tbody>
@@ -66,46 +84,37 @@
           {% set sc = score_map.get(student.id) %}
           <tr style="border-bottom:1px solid var(--slate-100);" class="score-row">
             <td style="padding:0.65rem 1rem;">
-              <div style="font-weight:700; font-size:0.88rem; color:var(--slate-900);">
-                {{ student.last_name }}, {{ student.first_name }}
-              </div>
+              <div style="font-weight:700; font-size:0.88rem; color:var(--slate-900);">{{ student.last_name }}, {{ student.first_name }}</div>
               <div class="g6-text-sm g6-muted">{{ student.admission_number }}</div>
             </td>
+
             {% set fields = [
-              ('ca1',  'ca_1',     10, sc.ca_1     if sc else ''),
-              ('ca2',  'ca_2',     10, sc.ca_2     if sc else ''),
-              ('ass1', 'assign_1', 10, sc.assign_1 if sc else ''),
-              ('ass2', 'assign_2', 10, sc.assign_2 if sc else ''),
-              ('exam', 'exam',     60, sc.exam      if sc else ''),
+              ('ca1',  'ca_1',     c1_max, sc.ca_1     if sc else ''),
+              ('ca2',  'ca_2',     c2_max, sc.ca_2     if sc else ''),
+              ('ass1', 'assign_1', c3_max, sc.assign_1 if sc else ''),
+              ('ass2', 'assign_2', c4_max, sc.assign_2 if sc else ''),
+              ('exam', 'exam',     c5_max, sc.exam     if sc else ''),
             ] %}
-            {% for fname, _, maxval, val in fields %}
-            <td style="padding:0.65rem 0.4rem; text-align:center;">
-              <input type="number" name="{{ fname }}_{{ student.id }}"
-                     class="score-input"
-                     data-student="{{ student.id }}"
-                     min="0" max="{{ maxval }}" step="0.5"
-                     value="{{ val if val != '' else '' }}"
-                     style="width:62px; text-align:center; border:1.5px solid var(--slate-200);
-                            border-radius:6px; padding:0.4rem 0.3rem; font-weight:600;
-                            font-size:0.88rem; background:var(--slate-50);">
-            </td>
+
+            {% for fname, db_field, maxval, val in fields %}
+              {% if maxval > 0 %}
+              <td style="padding:0.65rem 0.4rem; text-align:center;">
+                <input type="number" name="{{ fname }}_{{ student.id }}" class="score-input"
+                       data-student="{{ student.id }}" min="0" max="{{ maxval }}" step="0.5"
+                       value="{{ val if val != '' else '' }}"
+                       style="width:62px; text-align:center; border:1.5px solid var(--slate-200); border-radius:6px; padding:0.4rem 0.3rem; font-weight:600; font-size:0.88rem; background:var(--slate-50);">
+              </td>
+              {% endif %}
             {% endfor %}
+
             <td style="padding:0.65rem 0.5rem; text-align:center;">
-              <span id="total_{{ student.id }}"
-                    class="total-badge"
-                    style="font-family:monospace; font-size:0.95rem; font-weight:800;
-                           padding:0.3rem 0.6rem; border-radius:6px;
-                           background:var(--slate-100); color:var(--slate-700);">
+              <span id="total_{{ student.id }}" class="total-badge" style="font-family:monospace; font-size:0.95rem; font-weight:800; padding:0.3rem 0.6rem; border-radius:6px; background:var(--slate-100); color:var(--slate-700);">
                 {{ sc.total_score if sc else '0.0' }}
               </span>
             </td>
           </tr>
           {% else %}
-          <tr>
-            <td colspan="7" style="text-align:center; padding:2rem; color:var(--slate-400);">
-              No active students in this class.
-            </td>
-          </tr>
+          <tr><td colspan="7" style="text-align:center; padding:2rem; color:var(--slate-400);">No active students in this class.</td></tr>
           {% endfor %}
         </tbody>
       </table>

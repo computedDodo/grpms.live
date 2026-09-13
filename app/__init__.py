@@ -1,3 +1,5 @@
+import pymysql
+pymysql.install_as_MySQLdb()
 try:
     from psycopg2cffi import compat
     compat.register()

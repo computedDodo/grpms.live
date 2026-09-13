@@ -103,7 +103,18 @@
               <span style="font-weight:700;">@{{ member.username }}</span>
             </td>
             <td data-label="Role">
-              <span class="g6-badge g6-badge-info">{{ member.role }}</span>
+              {% if member.role in ['Teacher', 'FormMaster'] %}
+                <!-- Auto-submitting dropdown for Teachers and Form Masters -->
+                <form action="{{ url_for('superadmin.change_staff_role', user_id=member.id) }}" method="POST" style="margin:0;">
+                  <select name="new_role" class="g6-select" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; height: auto;" onchange="this.form.submit()">
+                    <option value="Teacher" {% if member.role == 'Teacher' %}selected{% endif %}>Teacher</option>
+                    <option value="FormMaster" {% if member.role == 'FormMaster' %}selected{% endif %}>Form Master</option>
+                  </select>
+                </form>
+              {% else %}
+                <!-- Static badge for Admin, Cashier, etc. -->
+                <span class="g6-badge g6-badge-info">{{ member.role }}</span>
+              {% endif %}
             </td>
             <td data-label="Full Name">
               {% if member.teacher_profile %}

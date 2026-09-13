@@ -47,6 +47,9 @@ def _generate_admission_number(school_id, active_session):
     Format: {Scholol Prefix}/{YY}/{YY}/{seq:03d}
     e.g. SCH2/25/26/001
     """
+    from app.models import School
+    school = School.query.get(school_id)
+
     parts = active_session.session_name.split('/')
     short = f"{parts[0][-2:]}/{parts[1][-2:]}" if len(parts) == 2 else 'XX/XX'
     if school.code:
@@ -219,6 +222,7 @@ def manage_subjects():
     if request.method == 'POST':
         name = request.form.get('subject_name', '').strip()
         code = request.form.get('subject_code', '').strip().upper()
+        arabic_name = request.form.get('arabic_name', '').strip() # New field
 
         if not name or not code:
             flash('Both subject name and code are required.', 'warning')
@@ -227,15 +231,18 @@ def manage_subjects():
         else:
             section = request.form.get('section', 'All Sections').strip()
             db.session.add(Subject(
-                school_id=sid, subject_name=name,
-                subject_code=code, section=section
+                school_id=sid,
+                subject_name=name,
+                subject_code=code,
+                section=section,
+                arabic_name=arabic_name if arabic_name else None
             ))
             db.session.commit()
             flash(f'Subject "{name}" ({code}) added.', 'success')
         return redirect(url_for('admin.manage_subjects'))
 
     subjects = Subject.query.filter_by(school_id=sid).order_by(Subject.subject_name).all()
-    return render_template('admin/subjects.html', subjects=subjects)
+    return render_template('admin/subjects.html', subjects=subjects, sections=Subject.SECTIONS)
 
 
 @admin_bp.route('/subjects/<int:subject_id>/delete', methods=['POST'])
@@ -332,6 +339,18 @@ def manage_students():
                     if not klass:
                         skipped += 1
                         continue
+                    #The Smart Duplicate Check
+                    duplicate_check = Student.query.filter(
+                        Student.school_id == sid,
+                        Student.first_name.ilike(fname),
+                        Student.last_name.ilike(lname),
+                        Student.current_class_id == klass.id,
+                        Student.is_active == True
+                    ).first()
+
+                    if duplicate_check:
+                        skipped += 1
+                        continue # Skip this row, they already exist!
 
                     adm_no   = _generate_admission_number(sid, active_session)
                     new_user = User(username=adm_no, role='Student', school_id=sid)
@@ -476,7 +495,7 @@ def manage_allocations():
     sid = _school_id()
 
     if request.method == 'POST':
-        action = request.form.get('action', 'single') 
+        action = request.form.get('action', 'single')
         teacher_id = request.form.get('teacher_id', type=int)
         subject_id = request.form.get('subject_id', type=int)
         class_id   = request.form.get('class_id', type=int)
@@ -487,16 +506,16 @@ def manage_allocations():
             if not level_keyword:
                 flash('Please enter a class level keyword.', 'warning')
                 return redirect(url_for('admin.manage_allocations'))
-            
+
             matched_classes = Class.query.filter(
                 Class.school_id == sid,
                 Class.class_name.ilike(f'%{level_keyword}%')
             ).all()
-            
+
             if not matched_classes:
                 flash(f'No classes found matching "{level_keyword}".', 'warning')
                 return redirect(url_for('admin.manage_allocations'))
-            
+
             created = 0
             skipped = []
             for cls in matched_classes:
@@ -512,17 +531,17 @@ def manage_allocations():
                     ))
                     created += 1
             db.session.commit()
-            
+
             msg = f'Batch done: {created} allocation(s) created'
             if skipped:
                 msg += f'; skipped (already assigned): {", ".join(skipped)}'
             flash(msg, 'success' if created else 'warning')
             return redirect(url_for('admin.manage_allocations'))
-        
+
         conflict = SubjectAllocation.query.filter_by(
             subject_id=subject_id, class_id=class_id
         ).first()
-        
+
         if conflict:
             flash(
                 f'This subject is already assigned to '
@@ -537,7 +556,7 @@ def manage_allocations():
             ))
             db.session.commit()
             flash('Allocation saved.', 'success')
-            
+
         return redirect(url_for('admin.manage_allocations'))
 
     # Fetch teachers (Teacher + FormMaster only, not Cashier/Admin)
@@ -704,32 +723,66 @@ def report_card(student_id):
         flash('Cannot generate report card: no active session/term configured.', 'warning')
         return redirect(url_for('admin.manage_students'))
 
-    scores = Score.query.filter_by(
+    # Fetch ALL active subjects for this student's specific class
+    from app.utils.computations import get_subjects_for_class
+    class_name = student.student_class.class_name if student.student_class else ''
+    all_subjects = get_subjects_for_class(class_name, student.school_id)
+
+    # Fetch the actual scores the student has received
+    scores_db = Score.query.filter_by(
         student_id=student.id,
         session_id=active_session.id,
         term_id=active_term.id,
     ).all()
+    score_map = {s.subject_id: s for s in scores_db}
 
-    total_marks    = sum(s.total_score or 0.0 for s in scores)
-    total_subjects = len(scores)
-    average        = round(total_marks / total_subjects, 2) if total_subjects else 0.0
+    # Map the scores to the subjects so we can render empty rows for missing scores
+    mapped_scores = []
+    for subject in all_subjects:
+        sc = score_map.get(subject.id)
+        if sc:
+            mapped_scores.append(sc)
+        else:
+            # Create a "dummy" score object just for rendering the empty row
+            class EmptyScore:
+                def __init__(self, subj):
+                    self.subject = subj
+                    self.ca_1 = '-'
+                    self.ca_2 = '-'
+                    self.assign_1 = '-'
+                    self.assign_2 = '-'
+                    self.exam = '-'
+                    self.total_score = '-'
+                    self.grade = '-'
+                    self.remark = '-'
+            mapped_scores.append(EmptyScore(subject))
+
+    # Calculate totals based only on the real scores
+    total_marks    = sum(s.total_score for s in scores_db if s.total_score)
+    total_subjects_with_scores = len([s for s in scores_db if s.total_score is not None])
+    average        = round(total_marks / total_subjects_with_scores, 2) if total_subjects_with_scores else 0.0
     class_size     = Student.query.filter_by(
         current_class_id=student.current_class_id, is_active=True
     ).count()
 
+    # Fetch the custom mark scheme for this student's class section
+    from app.models import SectionMarkScheme
+    section = student.student_class.section if student.student_class else 'All Sections'
+    scheme = SectionMarkScheme.query.filter_by(school_id=student.school_id, section=section).first()
+
     return render_template(
         'admin/report_card.html',
         student=student,
-        scores=scores,
+        scores=mapped_scores, # Pass the mapped scores
         active_session=active_session,
         active_term=active_term,
         total_marks=total_marks,
-        total_subjects=total_subjects,
+        total_subjects=total_subjects_with_scores, # Show how many subjects actually have grades
         average=average,
         class_size=class_size,
         school=current_user.school,
+        scheme=scheme
     )
-
 
 # ---------------------------------------------------------------------------
 # 6.9  TRANSCRIPT (cumulative across all sessions/terms)

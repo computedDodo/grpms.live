@@ -82,31 +82,57 @@
     <thead>
       <tr>
         <th class="subj">Subject</th>
-        <th>CA 1 (10)</th>
-        <th>CA 2 (10)</th>
-        <th>Ass 1 (10)</th>
-        <th>Ass 2 (10)</th>
-        <th>Exam (60)</th>
+
+        <!-- Dynamically pull labels and max marks -->
+        {% set c1_lbl = scheme.comp1_label if scheme else 'CA 1' %}
+        {% set c1_max = scheme.comp1_max if scheme else 10.0 %}
+        {% set c2_lbl = scheme.comp2_label if scheme else 'CA 2' %}
+        {% set c2_max = scheme.comp2_max if scheme else 10.0 %}
+        {% set c3_lbl = scheme.comp3_label if scheme else 'Ass 1' %}
+        {% set c3_max = scheme.comp3_max if scheme else 10.0 %}
+        {% set c4_lbl = scheme.comp4_label if scheme else 'Ass 2' %}
+        {% set c4_max = scheme.comp4_max if scheme else 10.0 %}
+        {% set c5_lbl = scheme.comp5_label if scheme else 'Exam' %}
+        {% set c5_max = scheme.comp5_max if scheme else 60.0 %}
+
+        {% if c1_max > 0 %}<th>{{ c1_lbl }} ({{ c1_max|int }})</th>{% endif %}
+        {% if c2_max > 0 %}<th>{{ c2_lbl }} ({{ c2_max|int }})</th>{% endif %}
+        {% if c3_max > 0 %}<th>{{ c3_lbl }} ({{ c3_max|int }})</th>{% endif %}
+        {% if c4_max > 0 %}<th>{{ c4_lbl }} ({{ c4_max|int }})</th>{% endif %}
+        {% if c5_max > 0 %}<th>{{ c5_lbl }} ({{ c5_max|int }})</th>{% endif %}
+
         <th>Total (100)</th>
         <th>Grade</th>
         <th>Remark</th>
+
+        <!-- The Optional Arabic Column -->
+        {% if school and school.show_arabic_column %}
+        <th class="subj" style="text-align:right;">المادة</th>
+        {% endif %}
       </tr>
     </thead>
     <tbody>
       {% for sc in scores %}
       <tr>
         <td class="subj">{{ sc.subject.subject_name }}</td>
-        <td>{{ sc.ca_1 }}</td>
-        <td>{{ sc.ca_2 }}</td>
-        <td>{{ sc.assign_1 }}</td>
-        <td>{{ sc.assign_2 }}</td>
-        <td>{{ sc.exam }}</td>
+        {% if c1_max > 0 %}<td>{{ sc.ca_1 }}</td>{% endif %}
+        {% if c2_max > 0 %}<td>{{ sc.ca_2 }}</td>{% endif %}
+        {% if c3_max > 0 %}<td>{{ sc.assign_1 }}</td>{% endif %}
+        {% if c4_max > 0 %}<td>{{ sc.assign_2 }}</td>{% endif %}
+        {% if c5_max > 0 %}<td>{{ sc.exam }}</td>{% endif %}
         <td style="font-weight:800;">{{ sc.total_score }}</td>
         <td style="font-weight:800;">{{ sc.grade }}</td>
         <td>{{ sc.remark }}</td>
+
+        <!-- Render Arabic Name if enabled -->
+        {% if school and school.show_arabic_column %}
+        <td class="subj" style="text-align:right; font-size:1.1rem; font-weight:700;" dir="rtl">
+          {{ sc.subject.arabic_name or '' }}
+        </td>
+        {% endif %}
       </tr>
       {% else %}
-      <tr><td colspan="9" style="text-align:center;padding:1rem;color:#94a3b8;">No scores recorded yet.</td></tr>
+      <tr><td colspan="10" style="text-align:center;padding:1rem;color:#94a3b8;">No scores recorded yet.</td></tr>
       {% endfor %}
     </tbody>
   </table>

@@ -61,7 +61,7 @@
             {% endif %}
           </td>
           <td data-label="Actions">
-            <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
               <a href="{{ url_for('platform.edit_school', school_id=school.id) }}"
                  class="g6-btn g6-btn-outline" style="font-size:0.78rem; padding:0.4rem 0.8rem;">
                 <i class="fas fa-edit"></i> Edit
@@ -83,17 +83,6 @@
                   {{ 'Deactivate' if school.is_active else 'Reactivate' }}
                 </button>
               </form>
-
-              <!-- SUPERADMIN PASSWORD RESET FORM -->
-              {% if super_admin %}
-              <form action="{{ url_for('platform.reset_superadmin_password', school_id=school.id) }}" method="POST" style="margin:0; display:flex; gap:0.25rem;" onsubmit="return confirm('Reset password for SuperAdmin @{{ super_admin.username }}?');">
-                <input type="password" name="new_password" placeholder="New Password" required minlength="8" style="font-size:0.78rem; padding:0.3rem 0.5rem; border:1px solid #ccc; border-radius:4px; max-width: 120px;">
-                <button type="submit" class="g6-btn g6-btn-outline" style="font-size:0.78rem; padding:0.4rem 0.8rem; color: var(--accent);">
-                  <i class="fas fa-key"></i> Reset Pwd
-                </button>
-              </form>
-              {% endif %}
-
             </div>
           </td>
         </tr>

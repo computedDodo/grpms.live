@@ -51,6 +51,12 @@
         </code>
       </div>
     </div>
+    <div style="margin-bottom:1.5rem;">
+      <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+        <input type="checkbox" name="show_arabic_column" {% if school.show_arabic_column %}checked{% endif %}>
+        <span class="g6-label" style="margin:0;">Show Arabic subject names on report cards</span>
+      </label>
+    </div>
 
     <hr style="border:none; border-top:1px solid var(--slate-200); margin-bottom:1.25rem;">
 
@@ -85,6 +91,74 @@
     <button type="submit" class="g6-btn g6-btn-primary g6-btn-block">
       <i class="fas fa-save"></i> Save Settings
     </button>
+    <hr style="border:none; border-top:1px solid var(--slate-200); margin:2rem 0 1.25rem;">
+
+    <h3 style="font-size:0.88rem; font-weight:700; text-transform:uppercase;
+               letter-spacing:0.06em; color:var(--slate-500); margin-bottom:1rem;">
+      Flexible Mark Scheme (Per Section)
+      <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:0.78rem; display:block; margin-top:4px;">
+        Customize grading components. The total Max Marks MUST equal 100 for each section.
+      </span>
+    </h3>
+
+    </form> <!-- Close the main settings form first so we can use independent forms for each section -->
+
+    {% set sections = ['Nursery', 'Primary', 'Junior Secondary', 'Senior Secondary'] %}
+
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      {% for sec in sections %}
+      {% set scheme = scheme_dict.get(sec) %}
+      <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 8px; padding: 1rem;">
+        <h4 style="margin-top:0; margin-bottom: 1rem; color: var(--slate-700);"><i class="fas fa-layer-group"></i> {{ sec }}</h4>
+
+        <form method="POST" action="{{ url_for('superadmin.update_mark_scheme') }}">
+          <input type="hidden" name="section" value="{{ sec }}">
+
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; min-width: 500px; margin-bottom: 1rem;">
+              <thead>
+                <tr style="font-size: 0.75rem; text-transform: uppercase; color: var(--slate-500); text-align: left;">
+                  <th style="padding-bottom: 0.5rem;">Component</th>
+                  <th style="padding-bottom: 0.5rem;">Label (e.g. CA 1, Mid-Term)</th>
+                  <th style="padding-bottom: 0.5rem; width: 100px;">Max Marks</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding: 0.25rem 0; font-size: 0.85rem; font-weight: 600;">#1</td>
+                  <td style="padding: 0.25rem 0.5rem 0.25rem 0;"><input type="text" name="comp1_label" class="g6-input" value="{{ scheme.comp1_label if scheme else 'CA 1' }}" required></td>
+                  <td style="padding: 0.25rem 0;"><input type="number" step="0.1" name="comp1_max" class="g6-input" value="{{ scheme.comp1_max if scheme else 10.0 }}" required></td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.25rem 0; font-size: 0.85rem; font-weight: 600;">#2</td>
+                  <td style="padding: 0.25rem 0.5rem 0.25rem 0;"><input type="text" name="comp2_label" class="g6-input" value="{{ scheme.comp2_label if scheme else 'CA 2' }}" required></td>
+                  <td style="padding: 0.25rem 0;"><input type="number" step="0.1" name="comp2_max" class="g6-input" value="{{ scheme.comp2_max if scheme else 10.0 }}" required></td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.25rem 0; font-size: 0.85rem; font-weight: 600;">#3</td>
+                  <td style="padding: 0.25rem 0.5rem 0.25rem 0;"><input type="text" name="comp3_label" class="g6-input" value="{{ scheme.comp3_label if scheme else 'Ass 1' }}" required></td>
+                  <td style="padding: 0.25rem 0;"><input type="number" step="0.1" name="comp3_max" class="g6-input" value="{{ scheme.comp3_max if scheme else 10.0 }}" required></td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.25rem 0; font-size: 0.85rem; font-weight: 600;">#4</td>
+                  <td style="padding: 0.25rem 0.5rem 0.25rem 0;"><input type="text" name="comp4_label" class="g6-input" value="{{ scheme.comp4_label if scheme else 'Ass 2' }}" required></td>
+                  <td style="padding: 0.25rem 0;"><input type="number" step="0.1" name="comp4_max" class="g6-input" value="{{ scheme.comp4_max if scheme else 10.0 }}" required></td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.25rem 0; font-size: 0.85rem; font-weight: 600;">#5 (Exam)</td>
+                  <td style="padding: 0.25rem 0.5rem 0.25rem 0;"><input type="text" name="comp5_label" class="g6-input" value="{{ scheme.comp5_label if scheme else 'Exam' }}" required></td>
+                  <td style="padding: 0.25rem 0;"><input type="number" step="0.1" name="comp5_max" class="g6-input" value="{{ scheme.comp5_max if scheme else 60.0 }}" required></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <button type="submit" class="g6-btn g6-btn-outline" style="font-size: 0.85rem; width: 100%;">
+            <i class="fas fa-save"></i> Save {{ sec }} Scheme
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
   </form>
 </div>
 {% endblock %}

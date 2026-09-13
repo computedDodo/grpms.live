@@ -582,3 +582,31 @@ def export_school_data(school_id):
     return Response(buf.getvalue(),
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         headers={'Content-Disposition': f'attachment; filename="{filename}"'})
+
+
+@platform_bp.route('/schools/<int:school_id>/reset-superadmin', methods=['POST'])
+@login_required
+@platform_admin_required
+def reset_superadmin_password(school_id):
+    school = School.query.get_or_404(school_id)
+    super_admin = User.query.filter_by(
+        school_id=school.id, role='SuperAdmin'
+    ).first()
+
+    if not super_admin:
+        flash(f'No SuperAdmin found for {school.name}.', 'danger')
+        return redirect(url_for('platform.dashboard'))
+
+    new_password = request.form.get('new_password', '').strip()
+    if len(new_password) < 8:
+        flash('Password must be at least 8 characters.', 'warning')
+        return redirect(url_for('platform.dashboard'))
+
+    super_admin.set_password(new_password)
+    db.session.commit()
+    flash(
+        f'Password reset for SuperAdmin @{super_admin.username} '
+        f'at {school.name}.', 'success'
+    )
+    return redirect(url_for('platform.dashboard'))
+

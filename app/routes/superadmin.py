@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 from app import db
 from app.models import (
     School, User, Teacher, AcademicSession, Term,
-    Coupon, Notification
+    Coupon, Notification, SectionMarkScheme
 )
 from app.utils.decorators import super_admin_required, verify_school_ownership
 
@@ -92,7 +92,10 @@ def school_settings():
         school.name           = request.form.get('name', '').strip() or school.name
         school.motto          = request.form.get('motto', '').strip()
         school.principal_name = request.form.get('principal_name', '').strip() or school.principal_name
-        # School code for admission number prefix
+
+        # The new Arabic column toggle
+        school.show_arabic_column = request.form.get('show_arabic_column') == 'on'
+
         raw_code = request.form.get('code', '').strip().upper()
         if raw_code:
             import re
@@ -110,8 +113,50 @@ def school_settings():
         flash('School settings updated successfully.', 'success')
         return redirect(url_for('superadmin.school_settings'))
 
-    return render_template('superadmin/settings.html', school=school)
+    # Fetch existing schemes to pre-fill the UI
+    schemes = SectionMarkScheme.query.filter_by(school_id=school.id).all()
+    scheme_dict = {s.section: s for s in schemes}
 
+    return render_template('superadmin/settings.html', school=school, scheme_dict=scheme_dict)
+
+@superadmin_bp.route('/settings/mark-scheme', methods=['POST'])
+@login_required
+@super_admin_required
+def update_mark_scheme():
+    school = current_user.school
+    section = request.form.get('section')
+
+    c1_l = request.form.get('comp1_label', 'CA 1')
+    c1_m = request.form.get('comp1_max', type=float, default=10.0)
+    c2_l = request.form.get('comp2_label', 'CA 2')
+    c2_m = request.form.get('comp2_max', type=float, default=10.0)
+    c3_l = request.form.get('comp3_label', 'Ass 1')
+    c3_m = request.form.get('comp3_max', type=float, default=10.0)
+    c4_l = request.form.get('comp4_label', 'Ass 2')
+    c4_m = request.form.get('comp4_max', type=float, default=10.0)
+    c5_l = request.form.get('comp5_label', 'Exam')
+    c5_m = request.form.get('comp5_max', type=float, default=60.0)
+
+    # Validation: Ensure it equals 100
+    total = c1_m + c2_m + c3_m + c4_m + c5_m
+    if total != 100.0:
+        flash(f'Total marks for {section} must equal 100. Currently: {total}.', 'danger')
+        return redirect(url_for('superadmin.school_settings'))
+
+    scheme = SectionMarkScheme.query.filter_by(school_id=school.id, section=section).first()
+    if not scheme:
+        scheme = SectionMarkScheme(school_id=school.id, section=section)
+        db.session.add(scheme)
+
+    scheme.comp1_label, scheme.comp1_max = c1_l, c1_m
+    scheme.comp2_label, scheme.comp2_max = c2_l, c2_m
+    scheme.comp3_label, scheme.comp3_max = c3_l, c3_m
+    scheme.comp4_label, scheme.comp4_max = c4_l, c4_m
+    scheme.comp5_label, scheme.comp5_max = c5_l, c5_m
+
+    db.session.commit()
+    flash(f'Mark scheme for {section} updated successfully.', 'success')
+    return redirect(url_for('superadmin.school_settings'))
 
 # ---------------------------------------------------------------------------
 # STAFF MANAGEMENT
@@ -200,12 +245,14 @@ def reset_staff_password(user_id):
 
     user.set_password(new_password)
     db.session.commit()
+
+    # Extracting logic to prevent f-string backslash syntax errors in older Python versions
+    pwd_text = 'the provided password' if new_password != '12345678' else '"12345678"'
     flash(
-        f"Password for @{user.username} reset to "
-        f"{'the provided password' if new_password != '12345678' else '\"12345678\"'}. "
-        f"Ask them to change it on next login.",
+        f"Password for @{user.username} reset to {pwd_text}. Ask them to change it on next login.",
         'info'
     )
+
     return redirect(url_for('superadmin.manage_staff'))
 
 
@@ -243,6 +290,28 @@ def restore_staff(user_id):
     db.session.commit()
     flash(f'Staff account "@{user.username}" restored. They can now log in again.', 'success')
     return redirect(url_for('superadmin.staff_archive'))
+
+
+@superadmin_bp.route('/staff/<int:user_id>/change-role', methods=['POST'])
+@login_required
+@super_admin_required
+def change_staff_role(user_id):
+    # Fetch the user and verify they belong to the current SuperAdmin's school
+    user = User.query.get_or_404(user_id)
+    verify_school_ownership(user)
+
+    # Grab the new role from the form submission
+    new_role = request.form.get('new_role')
+
+    # Ensure they are only switching between Teacher and FormMaster
+    if new_role in ['Teacher', 'FormMaster']:
+        user.role = new_role
+        db.session.commit()
+        flash(f'Role for @{user.username} successfully updated to {new_role}.', 'success')
+    else:
+        flash('Invalid role modification.', 'danger')
+
+    return redirect(url_for('superadmin.manage_staff'))
 
 
 @superadmin_bp.route('/staff/archive')
