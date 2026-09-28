@@ -192,71 +192,191 @@ CHARSET_MAP = {
 @login_required
 @platform_admin_required
 def generate_coupons():
-    schools = School.query.filter_by(is_active=True).order_by(School.name).all()
+    schools = (
+        School.query
+        .filter_by(is_active=True)
+        .order_by(School.name)
+        .all()
+    )
 
-    # Pre-select a school if coming from add_school → create_superadmin → here
     selected_school_id = request.values.get('school_id', type=int)
-    selected_school    = School.query.get(selected_school_id) if selected_school_id else None
-    active_term        = selected_school.active_term if selected_school else None
+
+    selected_school = (
+        School.query.get(selected_school_id)
+        if selected_school_id
+        else None
+    )
+
+    # All sessions/terms available for the selected school.
+    available_sessions = []
+
+    if selected_school:
+        available_sessions = (
+            AcademicSession.query
+            .filter_by(school_id=selected_school.id)
+            .order_by(AcademicSession.id.desc())
+            .all()
+        )
+
+    selected_term_id = request.values.get('term_id', type=int)
+
+    selected_term = None
+    if selected_school and selected_term_id:
+        selected_term = (
+            Term.query
+            .join(AcademicSession)
+            .filter(
+                Term.id == selected_term_id,
+                AcademicSession.school_id == selected_school.id,
+            )
+            .first()
+        )
 
     if request.method == 'POST':
-        school_id      = request.form.get('school_id', type=int)
-        quantity       = request.form.get('quantity', type=int)
-        length         = request.form.get('length', 8, type=int)
-        charset_choice = request.form.get('charset', 'alphanumeric')
+        school_id = request.form.get('school_id', type=int)
+        term_id = request.form.get('term_id', type=int)
+        quantity = request.form.get('quantity', type=int)
+        length = request.form.get('length', 8, type=int)
+        charset_choice = request.form.get(
+            'charset',
+            'alphanumeric'
+        )
 
-        school = School.query.get(school_id) if school_id else None
+        school = (
+            School.query.get(school_id)
+            if school_id
+            else None
+        )
+
         if not school:
-            flash('Please select a valid school.', 'warning')
-            return redirect(url_for('platform.generate_coupons'))
-
-        term = school.active_term
-        if not term:
             flash(
-                f'"{school.name}" has no active session/term configured yet. '
-                'Ask their SuperAdmin to set that up first.',
+                'Please select a valid school.',
                 'warning'
             )
-            return redirect(url_for('platform.generate_coupons', school_id=school.id))
+            return redirect(
+                url_for('platform.generate_coupons')
+            )
+
+        # The Platform Admin may generate a coupon for ANY term
+        # belonging to this school, including historical terms.
+        term = (
+            Term.query
+            .join(AcademicSession)
+            .filter(
+                Term.id == term_id,
+                AcademicSession.school_id == school.id,
+            )
+            .first()
+        )
+
+        if not term:
+            flash(
+                'Please select a valid academic term for this school.',
+                'warning'
+            )
+            return redirect(
+                url_for(
+                    'platform.generate_coupons',
+                    school_id=school.id
+                )
+            )
 
         if not quantity or quantity < 1:
-            flash('Please enter a quantity of 1 or more.', 'warning')
-            return redirect(url_for('platform.generate_coupons', school_id=school.id))
+            flash(
+                'Please enter a quantity of 1 or more.',
+                'warning'
+            )
+            return redirect(
+                url_for(
+                    'platform.generate_coupons',
+                    school_id=school.id
+                )
+            )
 
         if quantity > 5000:
-            flash('Maximum 5,000 coupons per batch. Run it again to generate more.', 'warning')
-            return redirect(url_for('platform.generate_coupons', school_id=school.id))
+            flash(
+                'Maximum 5,000 coupons per batch. '
+                'Run it again to generate more.',
+                'warning'
+            )
+            return redirect(
+                url_for(
+                    'platform.generate_coupons',
+                    school_id=school.id
+                )
+            )
 
         if not (6 <= length <= 16):
-            flash('Code length must be between 6 and 16 characters.', 'warning')
-            return redirect(url_for('platform.generate_coupons', school_id=school.id))
+            flash(
+                'Code length must be between 6 and 16 characters.',
+                'warning'
+            )
+            return redirect(
+                url_for(
+                    'platform.generate_coupons',
+                    school_id=school.id
+                )
+            )
 
-        charset = CHARSET_MAP.get(charset_choice, CHARSET_MAP['alphanumeric'])
+        charset = CHARSET_MAP.get(
+            charset_choice,
+            CHARSET_MAP['alphanumeric']
+        )
 
         try:
             created = 0
+
             for _ in range(quantity):
-                code = _generate_unique_code(length, charset)
-                db.session.add(Coupon(code=code, school_id=school.id, term_id=term.id))
+                code = _generate_unique_code(
+                    length,
+                    charset
+                )
+
+                db.session.add(
+                    Coupon(
+                        code=code,
+                        school_id=school.id,
+                        term_id=term.id
+                    )
+                )
+
                 created += 1
+
             db.session.commit()
+
         except RuntimeError as e:
             db.session.rollback()
+
             flash(str(e), 'danger')
-            return redirect(url_for('platform.generate_coupons', school_id=school.id))
+
+            return redirect(
+                url_for(
+                    'platform.generate_coupons',
+                    school_id=school.id
+                )
+            )
 
         flash(
-            f'{created:,} coupon(s) generated for {school.name} — '
-            f'{term.term_name}, {term.session.session_name}.',
+            f'{created:,} coupon(s) generated for '
+            f'{school.name} — {term.term_name}, '
+            f'{term.session.session_name}.',
             'success'
         )
-        return redirect(url_for('platform.coupon_register', school_id=school.id))
+
+        return redirect(
+            url_for(
+                'platform.coupon_register',
+                school_id=school.id,
+                term_id=term.id
+            )
+        )
 
     return render_template(
         'platform/generate_coupons.html',
         schools=schools,
         selected_school=selected_school,
-        active_term=active_term,
+        selected_term=selected_term,
+        available_sessions=available_sessions,
         charset_options=list(CHARSET_MAP.keys()),
     )
 

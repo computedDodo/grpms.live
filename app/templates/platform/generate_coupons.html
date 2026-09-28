@@ -1,4 +1,4 @@
-{% extends 'platform/base_platform.html' %}
+⁵{% extends 'platform/base_platform.html' %}
 {% block title %}Generate Coupons — GRPMS{% endblock %}
 
 {% block content %}
@@ -9,45 +9,94 @@
 
 <div style="display:grid; grid-template-columns:1fr; gap:1.25rem;">
 
-  <!-- Step 1: Pick school -->
-  <div class="g6-card">
-    <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:0.75rem;">Step 1 — Select School &amp; Term</h3>
-    <form method="GET" action="{{ url_for('platform.generate_coupons') }}" style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:flex-end;">
-      <div style="flex:1; min-width:200px;">
-        <label class="g6-label" for="school_id_pick">School</label>
-        <select id="school_id_pick" name="school_id" class="g6-select" required onchange="this.form.submit()">
-          <option value="" disabled {{ 'selected' if not selected_school }}>Select a school...</option>
-          {% for s in schools %}
-          <option value="{{ s.id }}" {{ 'selected' if selected_school and selected_school.id == s.id }}>{{ s.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-    </form>
+<!-- Step 1: Select School & Term -->
+<div class="g6-card">
+  <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:0.75rem;">
+    Step 1 — Select School &amp; Term
+  </h3>
 
-    {% if selected_school %}
-      {% if active_term %}
-      <div class="g6-flash g6-flash-success" style="margin-top:1rem;">
-        <i class="fas fa-check-circle"></i>
-        <span>Active term: <strong>{{ active_term.term_name }}</strong>,
-        <strong>{{ active_term.session.session_name }}</strong>.
-        Coupons will be generated for this term.</span>
-      </div>
-      {% else %}
-      <div class="g6-flash g6-flash-warning" style="margin-top:1rem;">
-        <i class="fas fa-exclamation-triangle"></i>
-        <span><strong>{{ selected_school.name }}</strong> has no active session/term set up yet.
-        Ask the school SuperAdmin to configure Academic Setup first, then come back here.</span>
-      </div>
-      {% endif %}
-    {% endif %}
+  <form method="GET"
+        action="{{ url_for('platform.generate_coupons') }}"
+        style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; align-items:end;">
+
+    <div>
+      <label class="g6-label" for="school_id_pick">School</label>
+      <select id="school_id_pick"
+              name="school_id"
+              class="g6-select"
+              required
+              onchange="this.form.submit()">
+        <option value="" disabled
+          {{ 'selected' if not selected_school }}>
+          Select a school...
+        </option>
+
+        {% for s in schools %}
+        <option value="{{ s.id }}"
+          {{ 'selected' if selected_school and selected_school.id == s.id }}>
+          {{ s.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="g6-label" for="term_id_pick">Academic Term</label>
+      <select id="term_id_pick"
+              name="term_id"
+              class="g6-select"
+              onchange="this.form.submit()"
+              {% if not selected_school %}disabled{% endif %}
+              required>
+
+        {% if selected_school and available_sessions %}
+          <option value="" disabled
+            {{ 'selected' if not selected_term }}>
+            Select term...
+          </option>
+
+          {% for session in available_sessions %}
+            <optgroup label="{{ session.session_name }}">
+              {% for term in session.terms %}
+              <option value="{{ term.id }}"
+                {{ 'selected' if selected_term and selected_term.id == term.id }}>
+                {{ term.term_name }}
+              </option>
+              {% endfor %}
+            </optgroup>
+          {% endfor %}
+
+        {% else %}
+          <option value="" disabled selected>
+            Select school first...
+          </option>
+        {% endif %}
+
+      </select>
+    </div>
+
+  </form>
+
+  {% if selected_school and selected_term %}
+  <div class="g6-flash g6-flash-success" style="margin-top:1rem;">
+    <i class="fas fa-check-circle"></i>
+    <span>
+      Selected term:
+      <strong>{{ selected_term.term_name }}</strong>,
+      <strong>{{ selected_term.session.session_name }}</strong>.
+      Coupons will be generated for this term.
+    </span>
   </div>
+  {% endif %}
+</div>
 
   <!-- Step 2: Configure and generate -->
-  {% if selected_school and active_term %}
+  {% if selected_school and selected_term %}
   <div class="g6-card">
     <h3 style="font-size:0.9rem; font-weight:700; margin-bottom:0.75rem;">Step 2 — Configure Batch</h3>
     <form method="POST" action="{{ url_for('platform.generate_coupons') }}">
       <input type="hidden" name="school_id" value="{{ selected_school.id }}">
+      <input type="hidden" name="term_id" value="{{ selected_term.id }}">
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
         <div>
