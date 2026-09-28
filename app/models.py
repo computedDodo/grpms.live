@@ -340,20 +340,19 @@ class Coupon(db.Model):
     def __repr__(self):
         return f'<Coupon {self.code} used={self.is_used}>'
 
-    def is_valid_for_redemption(self, school_id, current_term_id):
+    def is_valid_for_redemption(self, school_id):
         """
         A coupon is redeemable only if:
           - it belongs to the school attempting to use it
-          - it belongs to the CURRENTLY active term for that school
           - it has not already been used
-        No 'expired' flag needed — once the term changes, old unused
-        coupons simply stop matching the active term and become dead.
+
+        The coupon remains valid for its own term even after the
+        school moves to a subsequent active term.
         """
         return (
-            self.school_id == school_id
-            and self.term_id == current_term_id
-            and not self.is_used
-        )
+        self.school_id == school_id
+        and not self.is_used
+    )
 
     @staticmethod
     def register_query(school_id=None, term_id=None, status='all', search=''):
