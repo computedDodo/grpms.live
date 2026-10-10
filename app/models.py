@@ -2,6 +2,7 @@ from app import db, login_manager
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+import re
 
 
 @login_manager.user_loader
@@ -23,7 +24,7 @@ class School(db.Model):
     stamp_path     = db.Column(db.String(255), nullable=True)
     is_active      = db.Column(db.Boolean, default=True)
     created_at     = db.Column(db.DateTime, default=datetime.utcnow)
-    code           = db.Column(db.String(6), nullable=True)
+    code           = db.Column(db.String(6), nullable=True, unique=True, index=True)
     show_arabic_column = db.Column(db.Boolean, default=False)
     # relationships
     users    = db.relationship('User',            backref='school', lazy='dynamic')
@@ -31,6 +32,30 @@ class School(db.Model):
     classes  = db.relationship('Class',           backref='school', lazy='dynamic')
     subjects = db.relationship('Subject',         backref='school', lazy='dynamic')
     coupons  = db.relationship('Coupon',          backref='school', lazy='dynamic')
+
+    @staticmethod
+    def normalize_code(raw_code):
+        """Normalize school code as uppercase letters only, max 6 chars."""
+        if raw_code is None:
+            return None
+        text = str(raw_code).strip()
+        if not text:
+            return None
+
+        cleaned = re.sub(r'[^A-Za-z]', '', text.upper())[:6]
+        return cleaned or None
+
+    @staticmethod
+    def code_exists(code, exclude_school_id=None):
+        """Return True if the normalized code already exists (case-insensitive)."""
+        normalized = School.normalize_code(code)
+        if not normalized:
+            return False
+
+        query = School.query.filter(db.func.upper(School.code) == normalized.upper())
+        if exclude_school_id is not None:
+            query = query.filter(School.id != exclude_school_id)
+        return query.first() is not None
 
     def __repr__(self):
         return f'<School {self.name}>'
@@ -222,8 +247,8 @@ class Class(db.Model):
 
     # current students in this class
     students    = db.relationship('Student',
-                                  foreign_keys='Student.current_class_id',
-                                  backref='student_class', lazy='dynamic')
+                                   foreign_keys='Student.current_class_id',
+                                   backref='student_class', lazy='dynamic')
     allocations = db.relationship('SubjectAllocation', backref='assigned_class', lazy='dynamic')
 
     __table_args__ = (
@@ -466,3 +491,4 @@ class SectionMarkScheme(db.Model):
     __table_args__ = (
         db.UniqueConstraint('school_id', 'section', name='uq_school_section_scheme'),
     )
+
