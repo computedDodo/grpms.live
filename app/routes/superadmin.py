@@ -2,6 +2,7 @@ import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
+from sqlalchemy.exc import IntegrityError
 
 from app import db
 from app.models import (
@@ -96,12 +97,25 @@ def school_settings():
         # The new Arabic column toggle
         school.show_arabic_column = request.form.get('show_arabic_column') == 'on'
 
-        raw_code = request.form.get('code', '').strip().upper()
+        raw_code = request.form.get('code', '').strip()
         if raw_code:
-            import re
-            clean_code = re.sub(r'[^A-Z]', '', raw_code)[:6]
-            if clean_code:
-                school.code = clean_code
+            normalized = School.normalize_code(raw_code)
+            if not normalized:
+                flash('School code must contain at least one letter (A-Z).', 'warning')
+                return redirect(url_for('superadmin.school_settings'))
+
+            if School.code_exists(normalized, exclude_school_id=school.id):
+                existing_school = School.query.filter(
+                    db.func.upper(School.code) == normalized.upper()
+                ).first()
+                flash(
+                    f'School code "{normalized}" is already in use by "{existing_school.name}". '
+                    'Please choose a different code.',
+                    'danger'
+                )
+                return redirect(url_for('superadmin.school_settings'))
+
+            school.code = normalized
 
         for field in ['logo', 'signature', 'stamp']:
             f = request.files.get(field)
@@ -109,7 +123,13 @@ def school_settings():
                 path = _save_upload(f, f"{field}_{school.id}")
                 setattr(school, f'{field}_path', path)
 
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash('That school code is already in use by another school. Please choose a different code.', 'danger')
+            return redirect(url_for('superadmin.school_settings'))
+
         flash('School settings updated successfully.', 'success')
         return redirect(url_for('superadmin.school_settings'))
 
@@ -118,6 +138,7 @@ def school_settings():
     scheme_dict = {s.section: s for s in schemes}
 
     return render_template('superadmin/settings.html', school=school, scheme_dict=scheme_dict)
+
 
 @superadmin_bp.route('/settings/mark-scheme', methods=['POST'])
 @login_required
