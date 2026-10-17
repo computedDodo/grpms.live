@@ -1,0 +1,503 @@
+GRPMS TECHNICAL CHANGE RECORD
+
+School Code Uniqueness, Migration Safety, and Production Database Alignment
+
+Project: Grade & Result Processing Management System (GRPMS)
+Company: Grade6ix Tech Solutions
+Repository: computeddodo/grpms.live
+Change period: 16–17 October 2026
+Environment: Termux/MariaDB development and PythonAnywhere/MySQL production
+Change status: Implementation deployed; demo database restoration substantially completed; final verification outstanding.
+
+---
+
+1. Executive Summary
+
+This change addressed two related operational concerns in GRPMS:
+
+1. Enforcing school-code uniqueness consistently at the application and database levels.
+2. Aligning the PythonAnywhere production database with the development database so that the live demo environment contains the latest demonstration data.
+
+The school-code work introduced application-level duplicate validation, database-level uniqueness enforcement, a dedicated database migration, tests, and technical documentation.
+
+The production deployment was updated from the previous application revision to the new code on GitHub's "main" branch. The database migration was subsequently verified at revision "0004_enforce_school_code_uniqueness".
+
+A separate database restoration was then undertaken because the development environment contained additional second-term demonstration activity that was missing from production.
+
+The original database export was not suitable for direct import into the production MySQL server because it contained MariaDB-specific collation information. A new, MySQL-compatible export was generated and uploaded.
+
+The import processed substantial amounts of data but reported a character-set restoration error. Subsequent record-count comparisons showed matching counts for nine selected tables. However, the complete database and application have not yet been verified end to end.
+
+Current conclusion: The code deployment and migration are verified at the recorded revision. The database restoration appears substantially successful, but the character-set error and remaining verification items must be recorded rather than treated as resolved.
+
+---
+
+2. Background and Original Problem
+
+GRPMS supports multiple schools within the same platform. Each school has a school code used for identification and related school-specific operations.
+
+The uniqueness requirement is important because duplicate school codes could cause ambiguity in school identification and related workflows.
+
+The original implementation review identified two complementary requirements:
+
+- Application-level validation should reject duplicate school codes and handle database integrity errors safely.
+- The database must independently enforce uniqueness so that concurrent requests or alternate write paths cannot bypass application validation.
+
+Application validation alone is insufficient as a concurrency safeguard. Two requests can both pass an initial duplicate check before either inserts its record. A database unique constraint provides the final integrity guarantee.
+
+The production migration also needed to preserve existing school codes. Automatically rewriting existing codes during a migration could create unexpected changes to established identifiers and potentially affect related workflows.
+
+Environment context
+
+At the time of implementation, development and production contained the same single demonstration school:
+
+- School: Grade6ix Demo Academy
+- School code: "DMA"
+
+No real schools had been onboarded. This was an explicit consideration in the decision to replace the production demonstration database with the development demonstration database rather than merge the two.
+
+The replacement was intended to reproduce the development demonstration state, including the second-term activity.
+
+---
+
+3. Proposal and Technical Decision
+
+The original proposal called for a two-layer uniqueness safeguard.
+
+3.1 Application-layer protection
+
+The application should:
+
+- Normalize school codes consistently before comparison.
+- Reject a school code that conflicts with an existing school code.
+- Return an appropriate validation response to the user.
+- Handle database integrity errors safely.
+- Roll back a failed database transaction rather than leave the session in an invalid state.
+
+3.2 Database-layer protection
+
+The database should enforce a unique constraint named:
+
+"uq_schools_code"
+
+This constraint prevents duplicate non-null school codes from being stored, including when application-level checks are bypassed or concurrent operations occur.
+
+The database migration was assigned the revision:
+
+"0004_enforce_school_code_uniqueness"
+
+Its recorded predecessor is:
+
+"2ef9e254bb24"
+
+3.3 Migration safety decision
+
+An important issue emerged during the implementation review.
+
+An earlier migration approach could normalize or rewrite existing school codes automatically. That approach was reconsidered because the migration should not silently change existing identifiers.
+
+The safer implementation direction was to validate existing data, detect conflicts requiring attention, and enforce the constraint without automatically rewriting existing school codes.
+
+This preserves existing identifiers and makes any necessary data correction an explicit decision rather than an incidental effect of a schema migration.
+
+3.4 Backup requirement
+
+Before proceeding, a database backup was required.
+
+The development backup was created before implementation using the following command:
+
+"mariadb-dump -u root -p grpms_dev > beta_backup_before_school_code_uniqueness.sql"
+
+The original local backup was reported to be approximately 245 KB, with a recorded dump completion time of 16 October 2026 at 23:25:53.
+
+This backup belongs to the school-code uniqueness implementation stage. A separate, later export was created specifically for production database restoration.
+
+---
+
+4. DevOps Handover and Sign-off Status
+
+The DevOps handover identified two primary deliverables:
+
+1. Application-level duplicate rejection with safe integrity-error handling.
+2. Database-level uniqueness enforcement following a duplicate audit and backup.
+
+The implementation review covered the model, superadmin route, migration, tests, and documentation.
+
+The earlier implementation sign-off record referenced the following commits:
+
+- "1a09dc02"
+- "2cf53c25"
+- "008aa8d9"
+- "647a7df5"
+- "891499a6"
+
+These are the implementation references recorded in the earlier handover. They should not be interpreted as proof that every commit was deployed individually to production.
+
+Sign-off qualifications
+
+The earlier sign-off checklist still showed outstanding items, including:
+
+- Production duplicate-data audit.
+- Staging migration and test verification.
+- Verification of the required backup.
+- Stakeholder approval.
+
+The user subsequently directed that the work proceed after backing up the database, with the explicit clarification that both environments contained demonstration data and no real schools had been onboarded.
+
+The work therefore proceeded on that stated basis.
+
+Sign-off assessment: Implementation proceeded under the user's direction after the backup step. The available record does not establish that every item in the earlier DevOps checklist received a separate formal sign-off.
+
+For governance purposes, the outstanding checklist items should remain distinguishable from the implementation work that was actually performed.
+
+---
+
+5. Source-Control and Code Changes
+
+Repository
+
+"https://github.com/computeddodo/grpms.live"
+
+Production checkout
+
+"~/grpms_v2"
+
+Absolute path:
+
+"/home/CyberDodoo/grpms_v2"
+
+Files affected by the school-code uniqueness implementation
+
+File| Change or purpose
+"app/models.py"| School model and uniqueness-related application/database representation.
+"app/routes/superadmin.py"| Superadmin school-code handling and duplicate-validation logic.
+"migrations/versions/0004_enforce_school_code_uniqueness.py"| Database migration for uniqueness enforcement.
+"tests/test_school_code.py"| Focused tests for school-code behavior.
+"docs/changelog/uniqueness-proposal.md"| Records the proposed change and its rationale.
+"docs/changelog/uniqueness-implementation.md"| Records implementation details.
+"docs/school-code-uniqueness.md"| Technical documentation of the school-code uniqueness behavior.
+
+The incoming change was recorded as approximately 875 insertions and 9 deletions.
+
+This is the reported change summary from the earlier production update, not a newly calculated diff.
+
+Git deployment
+
+The production checkout was updated using a fast-forward pull:
+
+"git pull --ff-only origin main"
+
+The pull advanced the production checkout from "a18a69b" to "df673c3".
+
+The resulting production commit was recorded as:
+
+"df673c3" — "fix: make school code migration safe to rerun"
+
+The fast-forward approach avoided creating an unnecessary merge commit or replacing production changes with a divergent history.
+
+Existing backup preservation
+
+The pre-existing production backup file was preserved:
+
+"grpms_first_term_2025_2026_termux_safe.sql"
+
+It was identified as an untracked file during the production update and was not supposed to be removed or overwritten.
+
+---
+
+6. Migration Execution and Verification
+
+The production database was accessed through PythonAnywhere's remote MySQL server.
+
+Production database details
+
+Setting| Recorded value
+Database| "CyberDodoo$grpms"
+Database user| "CyberDodoo"
+Host| "CyberDodoo.mysql.pythonanywhere-services.com"
+Server version| MySQL 8.0.42
+Application checkout| "/home/CyberDodoo/grpms_v2"
+
+The migration commands were run in the production application environment.
+
+The following checks were recorded as successful:
+
+- "flask db current"
+- "flask db heads"
+
+Both reported:
+
+"0004_enforce_school_code_uniqueness (head)"
+
+This established that the production migration version matched the current migration head at that stage.
+
+It did not, by itself, establish that a later database restoration completed without error. That restoration is documented separately below.
+
+---
+
+7. Development-to-Production Database Restoration
+
+7.1 Objective
+
+Following the application deployment, development and production still needed to be aligned at the data level.
+
+The development database, "grpms_dev", contained the fuller demonstration dataset, including second-term activity that was missing from the production demo.
+
+Because no real schools had been onboarded, the agreed approach was to replace the production demonstration dataset with the development demonstration dataset, rather than merge records.
+
+7.2 Original export incompatibility
+
+The first export was named:
+
+"beta_backup_before_school_code_uniqueness.sql"
+
+It was a MariaDB dump and contained schema definitions and data statements, including "DROP TABLE", "CREATE TABLE", and "INSERT INTO".
+
+Two compatibility issues were identified:
+
+MariaDB-specific collation
+
+The original dump included:
+
+"utf8mb3_uca1400_ai_ci"
+
+That collation was incompatible with the target production MySQL 8.0.42 environment.
+
+Alembic migration revision
+
+The original dump also contained the older migration revision:
+
+"2ef9e254bb24"
+
+Its "alembic_version.version_num" column was defined as "VARCHAR(32)", which was too short for the newer revision name "0004_enforce_school_code_uniqueness".
+
+Consequently, importing the original dump unchanged would have risked both a collation error and an incorrect migration state.
+
+7.3 MySQL-compatible export
+
+A new export was generated from the development database using:
+
+"mariadb-dump -u root -p --skip-create-options grpms_dev > beta_backup_mysql_compatible.sql"
+
+The resulting file was approximately 244 KB.
+
+The checks performed on the new export established that:
+
+- A search for "uca1400" returned no matching lines.
+- The school and score data were present.
+- The "alembic_version.version_num" column was defined as "VARCHAR(64)".
+- The recorded migration revision was "0004_enforce_school_code_uniqueness".
+
+The file was then uploaded to:
+
+"/home/CyberDodoo/beta_backup_mysql_compatible.sql"
+
+The uploaded file was reported as approximately 244 KB.
+
+7.4 Import execution
+
+The production MySQL shell was opened against "CyberDodoo$grpms", and the uploaded export was executed using:
+
+"source /home/CyberDodoo/beta_backup_mysql_compatible.sql"
+
+The shell reported many successful statements, including table operations and inserts.
+
+However, the import ended with the following error:
+
+"ERROR 1231 (42000): Variable 'character_set_client' can't be set to the value of 'NULL'"
+
+It also reported:
+
+"ERROR: No query specified"
+
+The import appeared to continue processing statements around the error. Because the MySQL client can continue after an individual statement fails, the error cannot be dismissed solely because later statements succeeded.
+
+Important: The database had already been modified by the import. The correct next step was to inspect the resulting database, not to rerun the export immediately. The dump contains "DROP TABLE" statements and therefore can drop and recreate tables on a subsequent execution.
+
+---
+
+8. Errors and Anomalies Encountered
+
+Issue| Context| Outcome or status
+MariaDB collation incompatibility| Original development dump targeted MySQL 8.0.42.| Addressed by generating a new compatible export and checking for "uca1400".
+Old Alembic revision in original dump| Original export contained "2ef9e254bb24".| New export recorded "0004_enforce_school_code_uniqueness".
+Original "VARCHAR(32)" migration column| Original export's migration-version column could not accommodate the new revision string.| New export showed "VARCHAR(64)".
+"ERROR 1231" involving "character_set_client"| Appeared during the production "source" import.| Not yet conclusively diagnosed; import completion requires further verification.
+"ERROR: No query specified"| Appeared in the MySQL shell output around the end of the import.| No separate root cause established.
+Accidental password-like text entered at the SQL prompt| Occurred before the import command was run correctly.| Produced a SQL syntax error; the user subsequently proceeded with the import.
+Initial score-count discrepancy| An early reading appeared to show 2,062 production scores.| Subsequent score breakdowns matched development at 2,082 records. The early discrepancy was not confirmed as a real database difference.
+
+The database restoration should therefore be described as partially verified, not as a fully clean import.
+
+---
+
+9. Post-Restoration Record Comparison
+
+Record counts were compared between development and production for nine tables.
+
+Results
+
+Table| Development| Production| Comparison
+"schools"| 1| 1| Match
+"academic_sessions"| 2| 2| Match
+"terms"| 6| 6| Match
+"students"| 133| 133| Match
+"scores"| 2,082| 2,082| Match after detailed breakdown
+"users"| 142| 142| Match
+"teachers"| 5| 5| Match
+"classes"| 12| 12| Match
+"subjects"| 33| 33| Match
+
+These nine table counts match according to the recorded query outputs.
+
+Score distribution
+
+The score counts were also grouped by academic session and term.
+
+Session ID| Term ID| Development| Production
+1| 1| 1,029| 1,029
+1| 2| 1,029| 1,029
+1| 3| 24| 24
+Total| | 2,082| 2,082
+
+This confirms that the displayed distribution across the three terms matched in both environments.
+
+The session and term names were also inspected, and both databases showed the expected academic-session and term records.
+
+Scope limitation
+
+Matching row counts do not prove that every row is identical. Nor do they prove that every table imported successfully.
+
+The comparison did not establish full equality of all table contents, all table schemas, all constraints, all foreign keys, or all application workflows.
+
+The nine-table comparison is useful evidence of successful restoration, but it is not a substitute for complete database verification.
+
+---
+
+10. Testing and Validation Record
+
+Application tests
+
+The earlier development validation record reported:
+
+"6 passed, 7 warnings"
+
+The warnings were associated with SQLAlchemy's use of "datetime.utcnow()" and its deprecation.
+
+This is a recorded result from the implementation work. It should not be interpreted as proof that the entire application test suite passed or that production was tested with the same test suite.
+
+An earlier point in the work also noted that "pytest" was unavailable in the initial environment. The record does not establish every environment change involved in subsequently obtaining the reported six passing tests.
+
+Migration validation
+
+The migration revision was confirmed as:
+
+"0004_enforce_school_code_uniqueness (head)"
+
+This was verified in production before the database restoration.
+
+Database validation
+
+Nine table counts were compared between development and production, with matching counts recorded for all nine.
+
+The term-level score distribution also matched.
+
+Validation not yet established
+
+The available record does not confirm that the following checks have all been completed:
+
+- Full row-by-row comparison across all tables.
+- Complete schema and constraint comparison.
+- Verification of every foreign key and index after restoration.
+- Re-running the application migration checks after the restoration.
+- Full production application smoke testing, including login and representative school workflows.
+- Conclusive diagnosis of the character-set error.
+
+---
+
+11. Reference Documents and Technical Materials
+
+The following materials formed part of the implementation or were recorded in the repository and deployment work.
+
+Project documents
+
+1. "docs/changelog/uniqueness-proposal.md"
+   The proposal and rationale for the school-code uniqueness change.
+
+2. "docs/changelog/uniqueness-implementation.md"
+   The implementation record.
+
+3. "docs/school-code-uniqueness.md"
+   The technical explanation of the school-code uniqueness behavior.
+
+4. "migrations/versions/0004_enforce_school_code_uniqueness.py"
+   The migration implementing database-level uniqueness enforcement.
+
+5. "tests/test_school_code.py"
+   The focused school-code test file.
+
+6. "app/models.py"
+   Application model definitions relevant to school-code handling.
+
+7. "app/routes/superadmin.py"
+   Superadmin route logic relevant to school creation and school-code validation.
+
+Database and environment references
+
+8. "beta_backup_before_school_code_uniqueness.sql"
+   The pre-implementation development backup.
+
+9. "beta_backup_mysql_compatible.sql"
+   The regenerated export intended for the production MySQL environment.
+
+10. "grpms_first_term_2025_2026_termux_safe.sql"
+    The pre-existing production-side backup preserved during the deployment.
+
+11. Git history and migration state
+    The production fast-forward to "df673c3" and the Alembic revision checks.
+
+The database compatibility decisions were based on the observed differences between the MariaDB 12.3.2 source environment and the MySQL 8.0.42 target environment, especially the incompatible collation and migration-version column length.
+
+---
+
+12. Final Status Assessment
+
+Area| Status| Evidence
+School-code uniqueness implementation| Implemented| Application changes, migration, tests, and documentation were recorded.
+Code deployed to production| Confirmed| Fast-forward pull to "df673c3".
+Migration revision| Confirmed at recorded checkpoint| Production reported "0004_enforce_school_code_uniqueness (head)".
+Original export compatibility| Issue identified| MariaDB-specific collation and old migration revision found.
+Replacement export generated| Confirmed| Compatible export created and inspected.
+Production database restoration| Substantially completed, not fully verified| Import processed many statements; nine table counts subsequently matched.
+Character-set import error| Outstanding| "ERROR 1231" remains without a conclusive root-cause finding.
+Full database equivalence| Not established| Only selected table counts and term-level score counts were compared.
+End-to-end application verification after restore| Not established| No complete post-restoration smoke-test record is available.
+Formal completion of all DevOps sign-off items| Not established| Earlier checklist retained outstanding items.
+
+---
+
+13. Recommended Closeout Record
+
+The following actions should be recorded when they are actually completed:
+
+1. Diagnose or otherwise conclusively account for the "character_set_client" import error.
+2. Verify the complete database schema and all table counts.
+3. Compare critical records and constraints where row counts alone are insufficient.
+4. Confirm the migration revision and schema state after the restoration.
+5. Run a production smoke test covering authentication, school selection, academic sessions, term selection, score access, and representative result-processing workflows.
+6. Update the DevOps sign-off checklist to distinguish completed checks from outstanding approvals.
+7. Record the final verification date and the exact production Git commit.
+
+These actions are closeout requirements, not claims that the checks have already been performed.
+
+---
+
+14. Conclusion
+
+The GRPMS school-code uniqueness change was implemented, documented, and deployed to the production codebase. The production migration was verified at revision "0004_enforce_school_code_uniqueness".
+
+The separate production database restoration required a MySQL-compatible export because the original MariaDB dump contained incompatible collation information and an outdated migration revision. The replacement export was imported, and the subsequent checks showed matching record counts for nine selected tables, including matching score distributions across the three terms.
+
+The restoration is therefore supported by substantial evidence of success. However, the "character_set_client" error remains unresolved, and full schema equivalence and end-to-end application behavior have not been established by the available record.
+
+Final recorded status: Implementation deployed; selected database comparisons passed; full production restoration verification and formal closeout remain outstanding.
