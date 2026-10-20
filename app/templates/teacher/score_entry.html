@@ -123,10 +123,16 @@
 
     <div style="padding:1rem 1.25rem; background:var(--slate-50); border-top:1px solid var(--slate-200);
                 display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
-      <span class="g6-text-sm g6-muted">
-        <i class="fas fa-info-circle"></i>
-        Scores are clamped to their maximum automatically. Blank fields save as 0.
-      </span>
+      <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+        <span class="g6-text-sm g6-muted">
+          <i class="fas fa-info-circle"></i>
+          Scores are clamped to their maximum automatically. Blank fields save as 0.
+        </span>
+        <span id="draft-status" class="g6-text-sm" style="display:inline-flex; align-items:center; gap:0.35rem; color:var(--slate-500); font-weight:600;">
+          <i class="fas fa-circle-notch" style="font-size:0.7rem;"></i>
+          Draft autosave ready
+        </span>
+      </div>
       <button type="submit" class="g6-btn g6-btn-primary">
         <i class="fas fa-save"></i> Save All Scores
       </button>
@@ -139,6 +145,13 @@ document.addEventListener('DOMContentLoaded', function () {
   const storageKey = 'grpms_score_entry_{{ allocation.id }}';
   const form = document.querySelector('form');
   const inputs = document.querySelectorAll('.score-input');
+  const draftStatus = document.getElementById('draft-status');
+
+  function setDraftStatus(message, color) {
+    if (!draftStatus) return;
+    draftStatus.innerHTML = '<i class="fas fa-check-circle" style="font-size:0.7rem;"></i> ' + message;
+    draftStatus.style.color = color || 'var(--emerald-600)';
+  }
 
   function updateTotal(studentId) {
     let total = 0;
@@ -170,10 +183,15 @@ document.addEventListener('DOMContentLoaded', function () {
     try {
       if (Object.keys(payload).length === 0) {
         localStorage.removeItem(storageKey);
+        if (draftStatus) {
+          draftStatus.innerHTML = '<i class="fas fa-circle-notch" style="font-size:0.7rem;"></i> Draft autosave ready';
+          draftStatus.style.color = 'var(--slate-500)';
+        }
         return;
       }
 
       localStorage.setItem(storageKey, JSON.stringify(payload));
+      setDraftStatus('Draft saved automatically', 'var(--emerald-600)');
     } catch (err) {
       console.warn('Failed to save score-entry draft:', err);
     }
@@ -189,6 +207,8 @@ document.addEventListener('DOMContentLoaded', function () {
           inp.value = saved[inp.name];
         }
       });
+
+      setDraftStatus('Draft restored automatically', 'var(--blue-600)');
     } catch (err) {
       console.warn('Failed to restore score-entry draft:', err);
       try {
