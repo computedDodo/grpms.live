@@ -239,6 +239,105 @@ body {
 }
 .slider-dots span.active { background: var(--cyan); width: 20px; border-radius: 4px; }
 
+/* HERO ONLY */
+.landing-hero {
+  padding: 6.5rem 1.25rem 1.5rem;
+  background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+}
+
+.landing-hero__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.landing-hero__brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.landing-hero__icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(26,63,212,0.14), rgba(0,180,230,0.14));
+  color: var(--blue);
+  font-size: 1.75rem;
+  box-shadow: 0 8px 20px rgba(26,63,212,0.08);
+  flex-shrink: 0;
+}
+
+.landing-hero__title {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  color: var(--navy);
+}
+
+.landing-hero__title span {
+  color: var(--cyan);
+}
+
+.landing-hero__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  min-height: 64px;
+  padding: 0.9rem 1.5rem;
+  border-radius: 18px;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: clamp(1rem, 2vw, 1.55rem);
+  color: var(--navy);
+  background: linear-gradient(135deg, #5be27a, #7fe32c);
+  box-shadow: 0 12px 28px rgba(91, 226, 122, 0.22);
+  white-space: nowrap;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.landing-hero__cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 32px rgba(91, 226, 122, 0.28);
+}
+
+@media (max-width: 767px) {
+  .landing-hero {
+    padding-top: 5.5rem;
+    padding-bottom: 1rem;
+  }
+
+  .landing-hero__inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .landing-hero__brand {
+    width: 100%;
+    align-items: center;
+  }
+
+  .landing-hero__title {
+    font-size: clamp(1.7rem, 9vw, 2.6rem);
+    line-height: 1.08;
+  }
+
+  .landing-hero__cta {
+    width: 100%;
+    min-height: 56px;
+    font-size: 1.05rem;
+  }
+}
+  
 /* ── HOW IT WORKS steps ── */
 .steps { display: flex; flex-direction: column; gap: 1.5rem; }
 
