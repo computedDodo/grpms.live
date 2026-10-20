@@ -102,7 +102,8 @@
                 <input type="number" name="{{ fname }}_{{ student.id }}" class="score-input"
                        data-student="{{ student.id }}" min="0" max="{{ maxval }}" step="0.5"
                        value="{{ val if val != '' else '' }}"
-                       style="width:62px; text-align:center; border:1.5px solid var(--slate-200); border-radius:6px; padding:0.4rem 0.3rem; font-weight:600; font-size:0.88rem; background:var(--slate-50);">
+                       style="width:62px; text-align:center; border:1.5px solid var(--slate-200); border-radius:6px; padding:0.4rem 0.3rem; font-weight:600; font-size:0.88rem; background:var(--slate-50); color:var(--slate-900);"
+                >
               </td>
               {% endif %}
             {% endfor %}
@@ -135,42 +136,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  const inputs = document.querySelectorAll('.score-input');
-
-  function updateTotal(studentId) {
-    let total = 0;
-    document.querySelectorAll(`.score-input[data-student="${studentId}"]`)
-      .forEach(inp => { total += parseFloat(inp.value) || 0; });
-
-    const badge = document.getElementById(`total_${studentId}`);
-    badge.textContent = total.toFixed(1);
-
-    if (total >= 50) {
-      badge.style.background = '#dcfce7'; badge.style.color = '#15803d';
-    } else if (total >= 40) {
-      badge.style.background = '#fef3c7'; badge.style.color = '#b45309';
-    } else {
-      badge.style.background = '#fee2e2'; badge.style.color = '#b91c1c';
-    }
-  }
-
-  inputs.forEach(inp => {
-    // Enforce max on blur
-    inp.addEventListener('blur', function () {
-      const max = parseFloat(this.max);
-      if (parseFloat(this.value) > max) this.value = max;
-      if (parseFloat(this.value) < 0)   this.value = 0;
-      updateTotal(this.dataset.student);
-    });
-    inp.addEventListener('input', function () {
-      updateTotal(this.dataset.student);
-    });
-    // Initialise totals on page load
-    updateTotal(inp.dataset.student);
-  });
-});
-  // Auto Save scores draft in local storage 
-document.addEventListener('DOMContentLoaded', function () {
   const storageKey = 'grpms_score_entry_{{ allocation.id }}';
   const form = document.querySelector('form');
   const inputs = document.querySelectorAll('.score-input');
@@ -202,12 +167,16 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
 
-    if (Object.keys(payload).length === 0) {
-      localStorage.removeItem(storageKey);
-      return;
-    }
+    try {
+      if (Object.keys(payload).length === 0) {
+        localStorage.removeItem(storageKey);
+        return;
+      }
 
-    localStorage.setItem(storageKey, JSON.stringify(payload));
+      localStorage.setItem(storageKey, JSON.stringify(payload));
+    } catch (err) {
+      console.warn('Failed to save score-entry draft:', err);
+    }
   }
 
   function restoreDraft() {
@@ -222,22 +191,26 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     } catch (err) {
       console.warn('Failed to restore score-entry draft:', err);
-      localStorage.removeItem(storageKey);
+      try {
+        localStorage.removeItem(storageKey);
+      } catch (clearErr) {
+        console.warn('Failed to clear broken score-entry draft:', clearErr);
+      }
     }
 
     inputs.forEach(inp => updateTotal(inp.dataset.student));
   }
 
   inputs.forEach(inp => {
-    inp.addEventListener('input', function () {
-      updateTotal(this.dataset.student);
-      saveDraft();
-    });
-
     inp.addEventListener('blur', function () {
       const max = parseFloat(this.max);
       if (parseFloat(this.value) > max) this.value = max;
       if (parseFloat(this.value) < 0) this.value = 0;
+      updateTotal(this.dataset.student);
+      saveDraft();
+    });
+
+    inp.addEventListener('input', function () {
       updateTotal(this.dataset.student);
       saveDraft();
     });
@@ -247,9 +220,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
   restoreDraft();
 
-  form.addEventListener('submit', function () {
-    localStorage.removeItem(storageKey);
-  });
+  if (form) {
+    form.addEventListener('submit', function () {
+      try {
+        localStorage.removeItem(storageKey);
+      } catch (err) {
+        console.warn('Failed to clear draft on submit:', err);
+      }
+    });
+  }
 });
 </script>
 {% endblock %}
