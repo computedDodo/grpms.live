@@ -41,12 +41,14 @@
   .info-label { font-weight:700; color:#475569; margin-right:0.4rem; }
 
   /* Score table */
+  .score-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
   .score-table { width:100%; border-collapse:collapse; margin-bottom:1.5rem; }
   .score-table th, .score-table td { border:1px solid #cbd5e1; padding:0.6rem 0.5rem;
                                      text-align:center; font-size:0.85rem; }
   .score-table th { background:#f1f5f9; font-weight:700; text-transform:uppercase;
                     font-size:0.72rem; color:#0f172a; }
   .score-table td.subj { text-align:left; font-weight:600; }
+  .score-table .arabic-subj { text-align:right; direction:rtl; }
   .fail { color:#dc2626; font-weight:700; }
 
   /* Summary */
@@ -129,44 +131,53 @@
     </div>
   </div>
 
-  <table class="score-table">
-    <thead>
-      <tr>
-        <th class="subj" style="text-align:left;">Subject</th>
-        <th>CA 1<br><small>/10</small></th>
-        <th>CA 2<br><small>/10</small></th>
-        <th>Ass 1<br><small>/10</small></th>
-        <th>Ass 2<br><small>/10</small></th>
-        <th>Exam<br><small>/60</small></th>
-        <th>Total<br><small>/100</small></th>
-        <th>Grade</th>
-        <th>Remark</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for score in scores %}
-      <tr>
-        <td class="subj">{{ score.subject.subject_name }}</td>
-        <td>{{ score.ca_1 }}</td>
-        <td>{{ score.ca_2 }}</td>
-        <td>{{ score.assign_1 }}</td>
-        <td>{{ score.assign_2 }}</td>
-        <td>{{ score.exam }}</td>
-        <td class="{% if score.total_score < 40 %}fail{% endif %}" style="font-weight:700;">
-          {{ score.total_score }}
-        </td>
-        <td style="font-weight:700;">{{ score.grade }}</td>
-        <td>{{ score.remark }}</td>
-      </tr>
-      {% else %}
-      <tr>
-        <td colspan="9" style="text-align:center; padding:2rem; color:#94a3b8;">
-          No scores recorded yet.
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="score-table-wrap">
+    <table class="score-table">
+      <thead>
+        <tr>
+          <th class="subj" style="text-align:left;">Subject</th>
+          {% if school and school.show_arabic_column %}
+          <th class="arabic-subj" dir="rtl">المادة</th>
+          {% endif %}
+          <th>CA 1<br><small>/10</small></th>
+          <th>CA 2<br><small>/10</small></th>
+          <th>Ass 1<br><small>/10</small></th>
+          <th>Ass 2<br><small>/10</small></th>
+          <th>Exam<br><small>/60</small></th>
+          <th>Total<br><small>/100</small></th>
+          <th>Grade</th>
+          <th>Remark</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for score in scores %}
+        <tr>
+          <td class="subj">{{ score.subject.subject_name }}</td>
+          {% if school and school.show_arabic_column %}
+          <td class="arabic-subj" dir="rtl">{{ score.subject.arabic_name or '' }}</td>
+          {% endif %}
+          <td>{{ score.ca_1 }}</td>
+          <td>{{ score.ca_2 }}</td>
+          <td>{{ score.assign_1 }}</td>
+          <td>{{ score.assign_2 }}</td>
+          <td>{{ score.exam }}</td>
+          <td class="{% if score.total_score < 40 %}fail{% endif %}" style="font-weight:700;">
+            {{ score.total_score }}
+          </td>
+          <td style="font-weight:700;">{{ score.grade }}</td>
+          <td>{{ score.remark }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="{{ 10 if school and school.show_arabic_column else 9 }}"
+              style="text-align:center; padding:2rem; color:#94a3b8;">
+            No scores recorded yet.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
   {% if total_subjects > 0 %}
   <div class="summary-box">
